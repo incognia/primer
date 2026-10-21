@@ -1,0 +1,16 @@
+root = true
+
+# Todo el repositorio es UTF-8 con finales de línea LF (acentos, «», ñ y símbolos como ⌘)
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+# Windows PowerShell 5.1 lee un script sin BOM como ANSI (Windows-1252) y corrompe los acentos,
+# así que los archivos de Windows se guardan en UTF-8 con BOM
+[*.{cs,xaml,ps1,psm1,psd1}]
+charset = utf-8-bom
+
+# Visual Studio y las herramientas de Windows esperan CRLF en estos archivos
+[*.{sln,bat,cmd}]
+end_of_line = crlf
