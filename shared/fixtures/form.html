@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página con campos</title>
+<!--
+  Página de prueba de la autoprueba (--selftest). Sin red ni cuenta. NO es Prime Video: trae campos con una contraseña y un
+  correo de mentira para comprobar que el registro de diagnóstico nunca contiene el contenido de los campos de la página.
+-->
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #eee; padding: 16px; }
+  input { display: block; margin: 8px 0; padding: 6px; width: 260px; }
+</style>
+</head>
+<body>
+<form>
+  <input id="correo" type="email" value="ana@example.com" autocomplete="off">
+  <input id="clave" type="password" value="secreto-123" autocomplete="off">
+</form>
+<script>
+(() => {
+  window.__fixture = { name: 'form' };
+  console.log('fixture-ready:form');
+})();
+</script>
+</body>
+</html>
