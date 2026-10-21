@@ -6,7 +6,7 @@ import WebKit
 // Variable opcional: PRIMER_FIXTURES=<carpeta> para usar otras páginas de prueba que shared/fixtures/.
 
 // Dirección de inicio de Prime Video. Es una sola constante a propósito: depende de la región
-// y del canal de la cuenta (ver «Open Questions» en openspec/changes/add-macos-viewer/design.md).
+// y del canal de la cuenta (ver «Open Questions» en openspec/changes/archive/2026-10-20-add-macos-viewer/design.md).
 let homeURL = URL(string: "https://www.primevideo.com/")!
 
 // Diagnóstico opcional: solo con --debug. Escribe debug.log junto a la aplicación y habilita el inspector web.
