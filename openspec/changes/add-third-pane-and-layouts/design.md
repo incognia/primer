@@ -50,3 +50,5 @@ Sin migración: la disposición y el número de paneles no se guardan, y la sesi
 | Fecha | Tarea | Qué se probó | Resultado |
 |---|---|---|---|
 | 2026-10-20 | Atajos de la disposición | Qué hacer con ⌘V y ⌘H, que ya son «Pegar» y «Inicio de Prime Video» | **Decidido por el mantenedor:** ⌥⌘H (horizontal) y ⌥⌘V (vertical); ⌘V y ⌘H se conservan. |
+| 2026-10-20 | 5.1, 5.2 y 5.3 | Con la versión compilada: abrir el segundo y el tercer panel (⌘2, ⌘3), alternar ⌥⌘V y ⌥⌘H, audio por foco y clic de foco con tres paneles, ⌘F con tres paneles en cada disposición en el monitor 32:9 y en el secundario, y volver a uno y dos paneles | **Confirmado por el mantenedor («confirmo todo»)** los tres puntos pedidos. No dio más detalle: no quedó registrado el contenido usado ni qué respondió Prime Video sobre el cupo de tres reproducciones, así que el número de transmisiones simultáneas sigue sin medirse. |
+| 2026-10-20 | 5.2 (audio) | El audio por foco con tres paneles reproduciendo, ya con la versión final | **Confirmado por el mantenedor («funcionó el audio»).** Con esto queda cumplida la validación humana que `AGENTS.md` exige tras tocar el silenciado. |
