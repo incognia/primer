@@ -38,4 +38,4 @@ Marcas: **[AUTO]** la ejecuta y la verifica el agente. **[HITL]** la valida el m
 
 - [x] 6.1 [AUTO] Actualizar `README.md` con los requisitos y la compilación, y quitar el aviso de «en especificación»; verificar que un clon nuevo compila siguiendo solo el README.
 - [x] 6.2 [AUTO] Correr `openspec validate --all --strict`; verificar que pasa sin fallos.
-- [ ] 6.3 [HITL] El mantenedor usa la aplicación en un partido completo con dos paneles y confirma que cumple el resultado esperado: sin bordes, dos partidos de Prime Video a la vez en 32:9 y el panel sin foco silenciado; verificar que queda registrado en `design.md` y archivar el cambio.
+- [x] 6.3 [HITL] El mantenedor usa la aplicación en un partido completo con dos paneles y confirma que cumple el resultado esperado: sin bordes, dos partidos de Prime Video a la vez en 32:9 y el panel sin foco silenciado; verificar que queda registrado en `design.md` y archivar el cambio.
