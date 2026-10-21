@@ -6,7 +6,7 @@
 <title>Medios simples</title>
 <!--
   Dos elementos de medios (un video y un audio) con una pista de audio breve en bucle.
-  Página de prueba de la autoprueba (--selftest). Sin red ni cuenta. NO es Prime Video: solo
+  Página de prueba de la autoprueba (--selftest). Sin red ni cuenta y sin sonido (volumen 0). NO es Prime Video: solo
   comprueba el silenciado por foco. La autoprueba la maneja con window.__fixture.
 -->
 <style>
@@ -23,8 +23,14 @@
 (() => {
   const media = () => [...document.querySelectorAll('video,audio')];
   // Intenta reproducir sin acción del usuario; si el motor no lo permite no es un fallo de la página
+  // Volumen 0: la autoprueba no debe sonar. El silencio que se comprueba es la propiedad muted, no el volumen.
+  media().forEach(m => { m.volume = 0; });
   media().forEach(m => { const r = m.play(); if (r && r.catch) r.catch(() => {}); });
+  // Cuenta los eventos de ratón que llegan a la página: la autoprueba comprueba que el clic que da el foco no llega
+  let mouseDowns = 0;
+  document.addEventListener('mousedown', () => { mouseDowns++; }, true);
   const api = {
+    mouseDowns: () => mouseDowns,
     media,
     mutedStates: () => media().map(m => m.muted),
     allMuted: () => media().every(m => m.muted),
