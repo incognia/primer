@@ -4,6 +4,7 @@
 <key>CFBundleName</key><string>Primer</string>
 <key>CFBundleExecutable</key><string>Primer</string>
 <key>CFBundleIdentifier</key><string>mx.org.faraday.primer</string>
+<key>CFBundleIconFile</key><string>app.icns</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>

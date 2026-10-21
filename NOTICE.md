@@ -12,7 +12,7 @@ Primer solo abre el sitio web oficial de Prime Video dentro de una ventana del m
 
 ## Ícono de la aplicación
 
-Pendiente: el ícono de Primer será una imagen original del autor, distribuida bajo la misma licencia que el código. Hasta entonces el proyecto no incluye ícono.
+El ícono (`shared/assets/icon.png` y `macos/Primer.app/Contents/Resources/app.icns`) es una imagen generada por el autor para no usar logotipos de terceros, un balón de basquetbol con un botón de reproducción, y se distribuye bajo la misma licencia que el código. No usa logotipos de Amazon, Prime Video, la NBA ni la MLB.
 
 ## Origen del código
 

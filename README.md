@@ -33,6 +33,13 @@ cd macos
 
 El paquete queda en `macos/Primer.app`. Su ejecutable y su firma se generan al compilar y no se versionan.
 
+Para regenerar el ícono a partir de `shared/assets/icon.png`:
+
+```bash
+swiftc shared/scripts/make-icon.swift -o /tmp/make-icon
+/tmp/make-icon shared/assets/icon.png macos/Primer.app/Contents/Resources/app.icns
+```
+
 ## Usar
 
 Abre `macos/Primer.app` e inicia sesión en Prime Video; la sesión se conserva entre aperturas. Para otra instancia independiente, con la misma sesión:
@@ -76,7 +83,7 @@ Escribe `debug.log` junto a la aplicación y habilita el inspector web. Está ap
 
 ```text
 macos/     Swift sobre WKWebView: Primer.swift, build.sh y el paquete Primer.app
-shared/    páginas locales de prueba de la autoprueba (shared/fixtures/)
+shared/    páginas locales de prueba (shared/fixtures/), ícono (shared/assets/) y su script (shared/scripts/)
 openspec/  especificaciones y cambios: el plan de trabajo
 ```
 

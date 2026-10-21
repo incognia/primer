@@ -16,7 +16,7 @@ Primer nació de DAZNer, otro proyecto del mismo autor. De allí se hereda la fo
 
 ```text
 macos/     Swift sobre WKWebView; Primer.swift, build.sh y el paquete Primer.app
-shared/    (por llenar) páginas locales de prueba de la autoprueba
+shared/    páginas locales de prueba (fixtures/), ícono (assets/) y su script (scripts/)
 openspec/  especificaciones y cambios (el plan de trabajo, ver abajo)
 ```
 
