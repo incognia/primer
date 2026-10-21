@@ -16,12 +16,12 @@ La aplicación SHALL activar el modo de diagnóstico solo cuando se inicia con e
 
 ### Requirement: Eventos registrados
 
-En modo de diagnóstico, la aplicación SHALL registrar los eventos de pantalla completa (elemento, tamaño y estado) y los eventos de cada panel (cambio de tamaño, carga y descarga de la página).
+En modo de diagnóstico, la aplicación SHALL registrar los eventos de audio (panel con foco, panel silenciado e intentos del reproductor de reactivar el audio) y los eventos de cada panel (cambio de tamaño, carga y descarga de la página).
 
-#### Scenario: Pantalla completa en diagnóstico
+#### Scenario: Audio en diagnóstico
 
-- **WHEN** la página pide la pantalla completa con el modo de diagnóstico activo
-- **THEN** el registro anota el elemento, su tamaño antes y después, y la salida del modo
+- **WHEN** el reproductor del panel sin foco intenta reactivar su audio con el modo de diagnóstico activo
+- **THEN** el registro anota qué panel era, que la aplicación lo volvió a silenciar y la hora
 
 ### Requirement: Sin datos personales en el registro
 

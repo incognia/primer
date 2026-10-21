@@ -48,7 +48,7 @@ La aplicación SHALL crear el segundo panel solo cuando se pide y SHALL liberarl
 
 ### Requirement: Audio por foco
 
-Con dos paneles, la aplicación SHALL dejar sonar solo el panel con foco y silenciar el otro, y SHALL NOT reactivar el audio de un panel que el usuario silenció desde el reproductor.
+Con dos paneles, la aplicación SHALL dejar sonar solo el panel con foco y SHALL mantener silenciado el otro, aunque la página o el reproductor de ese panel intente reactivar su audio, y SHALL NOT reactivar el audio de un panel que el usuario silenció desde el reproductor.
 
 #### Scenario: Cambiar el foco
 
@@ -59,6 +59,16 @@ Con dos paneles, la aplicación SHALL dejar sonar solo el panel con foco y silen
 
 - **WHEN** el usuario silencia el panel con foco desde el reproductor de Prime Video
 - **THEN** el panel permanece silenciado hasta que el usuario lo active
+
+#### Scenario: El reproductor reactiva el audio
+
+- **WHEN** el reproductor del panel sin foco reactiva su propio audio
+- **THEN** el panel vuelve a quedar silenciado y no se escucha
+
+#### Scenario: Dos partidos en 32:9
+
+- **WHEN** hay dos paneles reproduciendo partidos distintos en una ventana 32:9
+- **THEN** se escucha solo el partido del panel con foco
 
 ### Requirement: Cambio de panel con foco
 

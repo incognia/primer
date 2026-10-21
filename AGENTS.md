@@ -1,22 +1,22 @@
 # Guía para agentes
 
-*Última modificación: 20 de octubre de 2026, 18:36 (CST)*
+*Última modificación: 20 de octubre de 2026, 19:00 (CST)*
 
 Este archivo es para un agente de IA que trabaja en este repositorio. El autor mantiene un repositorio de reglas personales (`rules`) con las *skills* de trabajo (`/commit`, `/changelogger`, `/git-init`, `/licensing`) y sus procedimientos. Está presente en `~/rules`, así que **si existe, manda sobre el resumen de este archivo**; este archivo recoge lo esencial por si no está.
 
 ## Qué es Primer
 
-Visor mínimo de los canales deportivos de Prime Video (hoy NBA League Pass; MLB.TV más adelante): abre el sitio oficial en una ventana sin bordes, con uno o dos paneles, y hace que el botón de pantalla completa llene la ventana o el panel en lugar de pasar a la pantalla completa del sistema. Licencia GPLv3; aviso de marcas en `NOTICE.md`.
+Visor mínimo de los canales deportivos de Prime Video (hoy NBA League Pass; MLB.TV más adelante): abre el sitio oficial en una ventana sin bordes, con uno o dos paneles, para ver dos partidos a la vez en una ventana 32:9 con el audio del panel sin foco silenciado. La pantalla completa no se sobrescribe: al reproducir, el reproductor de Prime Video llena la ventana por sí mismo. Licencia GPLv3; aviso de marcas en `NOTICE.md`.
 
 La página de Prime Video **no trae *multiview* nativo**: los paneles de Primer son la forma de ver varios partidos a la vez. Un panel mide 16:9 y dos paneles forman una ventana 32:9.
 
-Primer nació de DAZNer, otro proyecto del mismo autor. De allí se hereda la forma de trabajar y el punto de partida del script de pantalla completa. **Lo que se descubrió de DAZN es una hipótesis aquí, no un hecho**: nada se da por cierto en Prime Video hasta comprobarlo.
+Primer nació de DAZNer, otro proyecto del mismo autor. De allí se hereda la forma de trabajar y la estructura de las especificaciones. **Lo que se descubrió de DAZN es una hipótesis aquí, no un hecho**: nada se da por cierto en Prime Video hasta comprobarlo.
 
 ## Estructura
 
 ```text
-macos/     (por crear) Swift sobre WKWebView; Primer.swift, build.sh y el paquete Primer.app
-shared/    (por llenar) script de pantalla completa y otros archivos comunes
+macos/     Swift sobre WKWebView; Primer.swift, build.sh y el paquete Primer.app
+shared/    (por llenar) páginas locales de prueba de la autoprueba
 openspec/  especificaciones y cambios (el plan de trabajo, ver abajo)
 ```
 
@@ -36,7 +36,7 @@ Para trabajar un cambio:
 Este proyecto se trabaja con una persona que valida lo que solo una persona puede juzgar. Cada tarea de `tasks.md` lleva una marca:
 
 - **[AUTO]:** el agente la ejecuta y la verifica (compilar, correr la autoprueba, validar OpenSpec).
-- **[HITL]:** la verifica el mantenedor (si Prime Video reproduce, cómo se ve, si el botón de pantalla completa llena la ventana, qué responde la cuenta).
+- **[HITL]:** la verifica el mantenedor (si Prime Video reproduce, cómo se ve, si el panel sin foco queda sin sonido, qué responde la cuenta).
 
 Reglas para las tareas [HITL]:
 
@@ -52,7 +52,7 @@ Reglas para las tareas [HITL]:
 - **No afirmar lo que no se ejecutó.** No se marca una tarea como hecha ni se dice que algo funciona si no se pudo compilar y probar. Si algo solo puede verificarse en otra máquina o por el humano, se deja pendiente y se dice quién lo prueba y dónde.
 - **Credenciales:** Primer nunca lee, guarda ni registra contraseñas. No escribas credenciales en archivos, registros ni *commits*. Las pruebas de la autoprueba no usan ninguna cuenta.
 - **Marcas:** no uses logotipos de Amazon, Prime Video, la NBA ni la MLB. El ícono del proyecto será propio.
-- **Cualquier modificación al script de pantalla completa** exige repetir su verificación: la automática y la manual del humano.
+- **Cualquier cambio al silenciado del audio** exige repetir su verificación: la autoprueba y la validación del humano con dos partidos.
 
 ## Qué se sabe y qué no
 
@@ -60,12 +60,11 @@ Hechos que vienen del autor:
 
 - NBA League Pass se contrata como canal dentro de Prime Video, y el autor planea contratar también MLB.TV por la misma vía. Por eso Primer se construye sobre Prime Video y no se ata a un solo deporte.
 - Dos paneles alcanzan: es una decisión del autor, basada en su lectura del calendario de la NBA, que este repositorio no ha verificado.
-- El resultado esperado es el mismo que en DAZNer: aplicación sin bordes, y un botón de pantalla completa que llene la ventana o el panel.
+- El resultado esperado: aplicación sin bordes con dos paneles en 32:9, el panel sin foco silenciado, y sin sobrescribir la pantalla completa.
+- Al reproducir, el reproductor de Prime Video llena la ventana por sí mismo. Lo observó el autor con un panel; falta confirmarlo con dos.
 
 Hipótesis heredadas de DAZN, **sin verificar en Prime Video**:
 
-- Que el reproductor pide la pantalla completa con la API estándar (`requestFullscreen`), de modo que el script puede interceptarla.
-- Que reescribe las clases de sus contenedores al entrar en pantalla completa (en DAZN lo hacía).
 - Que cambiar el tamaño de la ventana refresca el reproductor, por lo que conviene abrir el segundo panel cambiando primero la ventana.
 - Que una captura de pantalla de un video con DRM sale en negro: no sirve para diagnosticar.
 
@@ -74,7 +73,7 @@ Preguntas abiertas: están en la sección «Open Questions» de `openspec/change
 ## Depuración
 
 - `--debug` escribe `debug.log` junto a la aplicación y habilita el inspector web. Está apagado por omisión y no debe versionarse.
-- El script compartido solo mide y registra si la plataforma define `window.__primerDebug`. Registra mediante `window.__primerLog`.
+- En modo de diagnóstico se registran los eventos de audio y de cada panel, nunca contraseñas ni el contenido de los campos.
 
 ## Repositorio de reglas del autor (`rules`)
 

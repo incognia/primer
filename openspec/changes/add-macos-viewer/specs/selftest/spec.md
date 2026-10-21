@@ -2,7 +2,7 @@
 
 ### Requirement: Autoprueba sin cuenta ni red
 
-La aplicación SHALL ofrecer el modo `--selftest`, que carga páginas locales de prueba incluidas en el repositorio y comprueba por sí misma la pantalla completa y los paneles, sin conectarse a Prime Video, sin usar ninguna cuenta y sin acceso a la red.
+La aplicación SHALL ofrecer el modo `--selftest`, que carga páginas locales de prueba incluidas en el repositorio y comprueba por sí misma el audio por foco y los paneles, sin conectarse a Prime Video, sin usar ninguna cuenta y sin acceso a la red.
 
 #### Scenario: Ejecutar la autoprueba
 
@@ -14,24 +14,29 @@ La aplicación SHALL ofrecer el modo `--selftest`, que carga páginas locales de
 - **WHEN** termina la autoprueba
 - **THEN** el código de salida es 0 si todas las comprobaciones pasaron y distinto de 0 si alguna falló
 
-### Requirement: Comprobaciones de pantalla completa
+### Requirement: Comprobaciones de audio
 
-La autoprueba SHALL comprobar, con una página local que simula un reproductor, que la pantalla completa llena el área, que no activa la pantalla completa del sistema, que Esc restaura el estilo original y que el modo se mantiene cuando la página reescribe las clases de sus contenedores.
+La autoprueba SHALL comprobar, con páginas locales que tienen elementos de medios, que con dos paneles solo el panel con foco queda sin silenciar, que el silencio se mantiene cuando la página intenta reactivar el audio y que el silencio manual no se revierte al cambiar el foco.
 
-#### Scenario: Llenar el área
+#### Scenario: Panel sin foco silenciado
 
-- **WHEN** la página de prueba pide la pantalla completa de su contenedor
-- **THEN** el contenedor mide lo mismo que el área visible y la ventana no está en pantalla completa del sistema
+- **WHEN** la autoprueba abre dos paneles con la página de medios y uno tiene el foco
+- **THEN** los elementos de medios del panel sin foco están silenciados y los del panel con foco no
 
-#### Scenario: Salir restaura el estilo
+#### Scenario: La página reactiva el audio
 
-- **WHEN** la autoprueba simula Esc
-- **THEN** el contenedor recupera su tamaño y su atributo de estilo originales
+- **WHEN** la página de prueba reactiva el audio del panel sin foco
+- **THEN** el panel vuelve a quedar silenciado dentro del tiempo que fija el diseño
 
-#### Scenario: Redibujado de la página
+#### Scenario: Cambiar el foco
 
-- **WHEN** la página de prueba reescribe las clases del contenedor durante el modo
-- **THEN** el contenedor sigue llenando el área
+- **WHEN** la autoprueba pasa el foco al otro panel
+- **THEN** el panel que perdió el foco queda silenciado y el que lo ganó deja de estarlo
+
+#### Scenario: Silencio manual
+
+- **WHEN** la autoprueba silencia a mano el panel con foco y luego cambia el foco y lo recupera
+- **THEN** ese panel sigue silenciado
 
 ### Requirement: Comprobaciones de paneles
 

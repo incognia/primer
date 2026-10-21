@@ -35,3 +35,23 @@ La aplicación SHALL abrir en el mismo panel los enlaces que piden una ventana n
 
 - **WHEN** Prime Video abre un enlace con destino de ventana nueva
 - **THEN** la dirección se carga en el panel desde el que se abrió y no aparece otra ventana
+
+### Requirement: El reproductor llena la ventana o el panel
+
+La aplicación SHALL dejar que el reproductor de Prime Video llene por sí mismo la ventana con un panel, o su panel con dos paneles, al reproducir, y SHALL NOT sobrescribir la API de pantalla completa de la página.
+
+#### Scenario: Un panel
+
+- **WHEN** el usuario reproduce un partido con un panel abierto
+- **THEN** el reproductor llena la ventana sin que la aplicación intervenga
+
+#### Scenario: Dos paneles
+
+- **WHEN** el usuario reproduce un partido en cada uno de dos paneles
+- **THEN** cada reproductor llena su panel y el otro panel no cambia
+
+#### Scenario: Botón de pantalla completa del reproductor
+
+- **WHEN** el usuario pulsa el botón de pantalla completa del reproductor
+- **THEN** la aplicación no lo intercepta ni lo emula, y responde como lo haga el motor web del sistema
+
