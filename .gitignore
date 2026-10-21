@@ -1,8 +1,6 @@
 # Binario compilado de macOS (se genera con macos/build.sh, ver README)
 macos/Primer.app/Contents/MacOS/Primer
 macos/Primer.app/Contents/_CodeSignature/
-# Copia de shared/fill-fullscreen.js que macos/build.sh deja en el paquete
-macos/Primer.app/Contents/Resources/fill-fullscreen.js
 
 # Registro del modo --debug
 debug.log
