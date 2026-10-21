@@ -11,8 +11,8 @@ Marcas: **[AUTO]** la ejecuta y la verifica el agente. **[HITL]** la valida el m
 
 ## 2. Autoprueba
 
-- [ ] 2.1 [AUTO] Retirar `shared/fill-fullscreen.js` y las tres páginas de prueba de pantalla completa de `shared/fixtures/` (`player.html`, `rewrites-classes.html` y `nested.html`), que ya no hacen falta, y quitar de `.gitignore` las líneas de la copia del script en el paquete; verificar con `grep -r fill-fullscreen .` que no queda ninguna referencia fuera del historial de git, del registro de `design.md` y del historial de cambios.
-- [ ] 2.2 [AUTO] Crear páginas locales de prueba de medios en `shared/fixtures/`: una con un elemento `video` con una pista de audio breve y otra que intenta reactivar el audio de sus medios de forma periódica; verificar que abren en un navegador sin errores de consola.
+- [x] 2.1 [AUTO] Retirar `shared/fill-fullscreen.js` y las tres páginas de prueba de pantalla completa de `shared/fixtures/` (`player.html`, `rewrites-classes.html` y `nested.html`), que ya no hacen falta, y quitar de `.gitignore` las líneas de la copia del script en el paquete; verificar con `grep -r fill-fullscreen .` que no queda ninguna referencia fuera del historial de git, del registro de `design.md` y del historial de cambios.
+- [x] 2.2 [AUTO] Crear páginas locales de prueba de medios en `shared/fixtures/`: una con un elemento `video` con una pista de audio breve y otra que intenta reactivar el audio de sus medios de forma periódica; verificar que abren en un navegador sin errores de consola.
 - [ ] 2.3 [AUTO] Implementar `--selftest` con las comprobaciones de los requisitos de `selftest` y correrlo; verificar que termina con código 0, que cada comprobación imprime su resultado y que la salida declara que no probó Prime Video.
 
 ## 3. Ventana
