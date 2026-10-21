@@ -304,19 +304,54 @@ final class PaneGrid: NSView {
     }
 }
 
-// Proporción de la ventana: 16n:9 en horizontal y 16:9n en vertical (n paneles de 16:9 uno junto al otro o uno sobre otro)
-func windowAspect(forPanes n: Int, layout: PaneLayout) -> NSSize {
-    layout == .horizontal ? NSSize(width: 16 * CGFloat(n), height: 9) : NSSize(width: 16, height: 9 * CGFloat(n))
+// Proporción del panel único: 16:9 al abrir y, a elección del usuario, 1.85:1 y las de cine 2.35:1, 2.39:1 y 2.40:1 (en secuencia). Con más de un
+// panel no existe: los paneles múltiples miden siempre 16:9.
+enum PanelRatio {
+    case r16x9, r185, r235, r239, r240
+    var size: NSSize {
+        switch self {
+        case .r16x9: return NSSize(width: 16, height: 9)
+        case .r185: return NSSize(width: 185, height: 100)
+        case .r235: return NSSize(width: 235, height: 100)
+        case .r239: return NSSize(width: 239, height: 100)
+        case .r240: return NSSize(width: 240, height: 100)
+        }
+    }
+    var decimal: CGFloat { size.width / size.height }
+    var next: PanelRatio {
+        switch self {
+        case .r16x9: return .r185
+        case .r185: return .r235
+        case .r235: return .r239
+        case .r239: return .r240
+        case .r240: return .r16x9
+        }
+    }
+}
+
+// Proporción de la ventana: 16n:9 en horizontal y 16:9n en vertical (n paneles de 16:9 uno junto al otro o uno sobre otro);
+// con un solo panel, la que haya elegido el usuario
+func windowAspect(forPanes n: Int, layout: PaneLayout, ratio: PanelRatio = .r16x9) -> NSSize {
+    if n == 1 { return ratio.size }
+    return layout == .horizontal ? NSSize(width: 16 * CGFloat(n), height: 9) : NSSize(width: 16, height: 9 * CGFloat(n))
 }
 
 // Marco de la ventana al pasar a n paneles y a la disposición `layout`. Se deduce el tamaño de un panel del marco actual y el marco
 // nuevo repite ese panel n veces a lo largo del nuevo eje, de modo que los paneles que ya estaban abiertos conservan su tamaño y no se
 // refrescan (cambiar el tamaño de la ventana rehace el reproductor). Si no cabe en `area` se reduce con la misma proporción, y si se
-// sale se desplaza lo mínimo. Conserva la esquina superior izquierda y nunca baja de 320 px de ancho.
-func windowFrame(forPanes n: Int, layout: PaneLayout, from old: NSRect, fromPanes oldN: Int, fromLayout oldLayout: PaneLayout, in area: NSRect) -> NSRect {
+// sale se desplaza lo mínimo. Conserva la esquina superior izquierda y nunca baja de 320 px de ancho. Con un solo panel (de origen) el
+// panel parte de su ancho como un 16:9, también si la ventana tenía una proporción de cine; con un solo panel de destino, el alto sale
+// de `ratio` (16:9 salvo que el usuario haya elegido otra).
+func windowFrame(forPanes n: Int, layout: PaneLayout, from old: NSRect, fromPanes oldN: Int, fromLayout oldLayout: PaneLayout,
+                 ratio: PanelRatio = .r16x9, in area: NSRect) -> NSRect {
     let oldCount = CGFloat(max(oldN, 1)), count = CGFloat(n)
-    let pane = oldLayout == .horizontal ? NSSize(width: old.width / oldCount, height: old.height) : NSSize(width: old.width, height: old.height / oldCount)
-    var size = layout == .horizontal ? NSSize(width: pane.width * count, height: pane.height) : NSSize(width: pane.width, height: pane.height * count)
+    let pane: NSSize
+    if oldN <= 1 { pane = NSSize(width: old.width, height: old.width * 9 / 16) }
+    else if oldLayout == .horizontal { pane = NSSize(width: old.width / oldCount, height: old.height) }
+    else { pane = NSSize(width: old.width, height: old.height / oldCount) }
+    var size: NSSize
+    if n == 1 { size = NSSize(width: pane.width, height: pane.width / ratio.decimal) }
+    else { size = layout == .horizontal ? NSSize(width: pane.width * count, height: pane.height) : NSSize(width: pane.width, height: pane.height * count) }
     let fit = min(1, area.width / size.width, area.height / size.height)
     size = NSSize(width: size.width * fit, height: size.height * fit)
     if size.width < 320 { let up = 320 / size.width; size = NSSize(width: 320, height: size.height * up) }
@@ -325,10 +360,14 @@ func windowFrame(forPanes n: Int, layout: PaneLayout, from old: NSRect, fromPane
     return NSRect(x: x, y: top - size.height, width: size.width, height: size.height)
 }
 
-final class App: NSObject, NSApplicationDelegate, WKUIDelegate {
+final class App: NSObject, NSApplicationDelegate, WKUIDelegate, NSMenuItemValidation {
     var window: NSWindow!
     var grid: PaneGrid!
     var selfTest: SelfTest?
+    // Proporción del panel único; con más de un panel siempre es 16:9
+    var ratio: PanelRatio = .r16x9
+    // La autoprueba fija el área útil para no depender de la pantalla de la máquina
+    var areaOverride: NSRect?
 
     // Cada panel es un contexto web independiente; todos comparten la sesión (almacén de datos predeterminado)
     func makePane() -> Pane {
@@ -339,12 +378,14 @@ final class App: NSObject, NSApplicationDelegate, WKUIDelegate {
         return p
     }
 
-    var usableArea: NSRect { (window.screen ?? NSScreen.main)?.visibleFrame ?? window.frame }
+    var usableArea: NSRect { areaOverride ?? (window.screen ?? NSScreen.main)?.visibleFrame ?? window.frame }
 
     // De uno a tres paneles: primero se crean o se quitan los paneles y luego cambia la ventana, una sola vez, para que los paneles
     // que ya estaban abiertos no cambien de tamaño
     func setPanes(_ n: Int) {
         guard (1...maxPanes).contains(n), n != grid.count else { return }
+        // Los paneles múltiples miden 16:9, y al volver a uno no se recuerda la proporción de cine
+        ratio = .r16x9
         let target = windowFrame(forPanes: n, layout: grid.layout, from: window.frame, fromPanes: grid.count, fromLayout: grid.layout, in: usableArea)
         while grid.count < n { grid.addPane() }
         while grid.count > n { grid.removeLastPane() }
@@ -362,6 +403,22 @@ final class App: NSObject, NSApplicationDelegate, WKUIDelegate {
         window.aspectRatio = windowAspect(forPanes: grid.count, layout: layout)
         window.setFrame(target, display: true, animate: false)
         grid.layoutPanes()
+    }
+    // Proporción de cine (⌥⌘P): solo con un panel; 16:9 → 1.85:1 → 2.35:1 → 2.39:1 → 2.40:1 → 16:9. Conserva el ancho y la esquina superior izquierda
+    func cycleRatio() {
+        guard grid.count == 1 else { return }
+        ratio = ratio.next
+        let target = windowFrame(forPanes: 1, layout: grid.layout, from: window.frame, fromPanes: 1, fromLayout: grid.layout, ratio: ratio, in: usableArea)
+        window.aspectRatio = windowAspect(forPanes: 1, layout: grid.layout, ratio: ratio)
+        window.setFrame(target, display: true, animate: false)
+        grid.layoutPanes()
+    }
+    @objc func changeRatio() { cycleRatio() }
+
+    // La proporción solo está habilitada con un panel
+    func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        if item.action == #selector(App.changeRatio) { return (grid?.count ?? 1) == 1 }
+        return true
     }
     @objc func onePane() { setPanes(1) }
     @objc func twoPanes() { setPanes(2) }
@@ -430,7 +487,7 @@ final class App: NSObject, NSApplicationDelegate, WKUIDelegate {
 }
 
 // Menú de la aplicación, con los atajos de ⌘: Salir (Q); Ventana: rellenar y centrar (F), siempre encima (T) y cerrar (W);
-// Paneles: 1, 2 y 3 paneles, disposición horizontal (⌥⌘H) y vertical (⌥⌘V), siguiente panel (`), abrir dirección (L), recargar (R)
+// Paneles: 1, 2 y 3 paneles, disposición horizontal (⌥⌘H) y vertical (⌥⌘V), proporción con un panel (⌥⌘P), siguiente panel (`), abrir dirección (L), recargar (R)
 // e inicio de Prime Video (H);
 // Edición: deshacer, cortar, copiar, pegar y seleccionar todo. Recargar, inicio y abrir dirección actúan sobre el panel con foco.
 @MainActor
@@ -462,6 +519,7 @@ func makeMainMenu(target: App) -> NSMenu {
     add(panes, "3 paneles", #selector(App.threePanes), "3")
     add(panes, "Disposición horizontal", #selector(App.horizontalLayout), "h", option: true)
     add(panes, "Disposición vertical", #selector(App.verticalLayout), "v", option: true)
+    add(panes, "Proporción", #selector(App.changeRatio), "p", option: true)
     add(panes, "Siguiente panel", #selector(App.nextPane), "`")
     add(panes, "Abrir dirección…", #selector(App.openAddress), "l")
     add(panes, "Recargar", #selector(App.reload), "r")
@@ -684,7 +742,7 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         walk(makeMainMenu(target: objetivo))
         defer { withExtendedLifetime(objetivo) {} }
         let esperados = [("1", "1 panel"), ("2", "2 paneles"), ("3", "3 paneles"),
-                         ("⌥h", "Disposición horizontal"), ("⌥v", "Disposición vertical"), ("l", "Abrir dirección…"), ("r", "Recargar"), ("h", "Inicio de Prime Video"),
+                         ("⌥h", "Disposición horizontal"), ("⌥v", "Disposición vertical"), ("⌥p", "Proporción"), ("l", "Abrir dirección…"), ("r", "Recargar"), ("h", "Inicio de Prime Video"),
                          ("`", "Siguiente panel"), ("t", "Siempre encima"), ("f", "Rellenar y centrar"), ("w", "Cerrar"), ("q", "Salir de Primer"),
                          ("z", "Deshacer"), ("x", "Cortar"), ("c", "Copiar"), ("v", "Pegar"), ("a", "Seleccionar todo")]
         for (key, title) in esperados {
@@ -697,8 +755,8 @@ final class SelfTest: NSObject, WKNavigationDelegate {
             return !t.responds(to: a)
         }.map { $0.title }
         let conDestino = items.values.filter { $0.target != nil && $0.action != nil }.count
-        check("atajos: las 11 acciones propias del menú tienen destino (la comprobación no pasa en vacío)", conDestino == 11, "con destino: \(conDestino)")
-        check("atajos: cada acción propia del menú tiene quien la atienda", sinAtender.isEmpty && conDestino == 11, "sin atender: \(sinAtender)")
+        check("atajos: las 12 acciones propias del menú tienen destino (la comprobación no pasa en vacío)", conDestino == 12, "con destino: \(conDestino)")
+        check("atajos: cada acción propia del menú tiene quien la atienda", sinAtender.isEmpty && conDestino == 12, "sin atender: \(sinAtender)")
     }
 
     // Sesión persistente compartida entre paneles e instancias (tarea 5.1). Que la sesión sobreviva de verdad al cerrar la valida una persona (5.2)
@@ -1006,6 +1064,95 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         }
     }
 
+    // Proporción de cine con un solo panel (tareas 1.2, 2.1, 3.1 y 3.2): funciones puras y la acción real de App con su ventana
+    func checkRatios() {
+        func close(_ a: CGFloat, _ b: CGFloat, _ tol: CGFloat = 1.0) -> Bool { abs(a - b) <= tol }
+        let area = NSRect(x: 0, y: 0, width: 5120, height: 3000)
+
+        // Proporciones y secuencia
+        check("proporción: la secuencia es 16:9 → 1.85:1 → 2.35:1 → 2.39:1 → 2.40:1 → 16:9",
+              PanelRatio.r16x9.next == .r185 && PanelRatio.r185.next == .r235 && PanelRatio.r235.next == .r239 && PanelRatio.r239.next == .r240 && PanelRatio.r240.next == .r16x9)
+        check("proporción: con un panel la ventana mide la proporción elegida",
+              windowAspect(forPanes: 1, layout: .horizontal, ratio: .r235) == NSSize(width: 235, height: 100) && windowAspect(forPanes: 1, layout: .vertical, ratio: .r239) == NSSize(width: 239, height: 100))
+        check("proporción: con más de un panel se ignora y los paneles miden 16:9",
+              windowAspect(forPanes: 2, layout: .horizontal, ratio: .r239) == NSSize(width: 32, height: 9) && windowAspect(forPanes: 3, layout: .vertical, ratio: .r235) == NSSize(width: 16, height: 27))
+
+        // Marcos: mismo ancho, alto = W / razón y esquina superior izquierda fija
+        let base = NSRect(x: 100, y: 1500, width: 1280, height: 720)
+        let f185 = windowFrame(forPanes: 1, layout: .horizontal, from: base, fromPanes: 1, fromLayout: .horizontal, ratio: .r185, in: area)
+        check("proporción: a 1.85:1 conserva el ancho, el alto es W / 1.85 y la esquina superior izquierda",
+              close(f185.width, 1280, 0.01) && close(f185.height, 1280 / 1.85, 0.01) && close(f185.minX, 100, 0.01) && close(f185.maxY, 2220, 0.01), "\(f185)")
+        let f235 = windowFrame(forPanes: 1, layout: .horizontal, from: f185, fromPanes: 1, fromLayout: .horizontal, ratio: .r235, in: area)
+        check("proporción: a 2.35:1 conserva el ancho, el alto es W / 2.35 y la esquina superior izquierda",
+              close(f235.width, 1280, 0.01) && close(f235.height, 1280 / 2.35, 0.01) && close(f235.minX, 100, 0.01) && close(f235.maxY, 2220, 0.01), "\(f235)")
+        let f239 = windowFrame(forPanes: 1, layout: .horizontal, from: f235, fromPanes: 1, fromLayout: .horizontal, ratio: .r239, in: area)
+        check("proporción: a 2.39:1 el alto es W / 2.39", close(f239.width, 1280, 0.01) && close(f239.height, 1280 / 2.39, 0.01) && close(f239.maxY, 2220, 0.01), "\(f239)")
+        let f240 = windowFrame(forPanes: 1, layout: .horizontal, from: f239, fromPanes: 1, fromLayout: .horizontal, ratio: .r240, in: area)
+        check("proporción: a 2.40:1 el alto es W / 2.40", close(f240.width, 1280, 0.01) && close(f240.height, 1280 / 2.40, 0.01) && close(f240.maxY, 2220, 0.01), "\(f240)")
+        let back = windowFrame(forPanes: 1, layout: .horizontal, from: f240, fromPanes: 1, fromLayout: .horizontal, ratio: .r16x9, in: area)
+        check("proporción: de 2.40:1 vuelve a 16:9 con el mismo ancho", close(back.width, 1280, 0.01) && close(back.height, 720, 0.01), "\(back)")
+        let dos = windowFrame(forPanes: 2, layout: .horizontal, from: f239, fromPanes: 1, fromLayout: .horizontal, in: area)
+        check("proporción: abrir un segundo panel desde 2.39:1 parte de un 16:9 del mismo ancho (32:9)",
+              close(dos.width, 2560, 0.01) && close(dos.height, 720, 0.01) && close(dos.maxY, 2220, 0.01), "\(dos)")
+        let chica = NSRect(x: 0, y: 0, width: 1600, height: 600)
+        let ajustada = windowFrame(forPanes: 1, layout: .horizontal, from: f239, fromPanes: 1, fromLayout: .horizontal, ratio: .r16x9, in: chica)
+        check("proporción: si 16:9 no cabe en alto la ventana se reduce conservando 16:9 y queda dentro",
+              abs(ajustada.width / ajustada.height - 16.0 / 9.0) < 0.0001 && ajustada.height <= chica.height + 0.01 && ajustada.minY >= chica.minY - 0.01, "\(ajustada)")
+
+        // La acción real de App, con su ventana y su rejilla de paneles
+        let a = App()
+        a.areaOverride = area
+        a.grid = PaneGrid(factory: { NSView() })
+        a.window = makeChromeWindow(content: a.grid)
+        a.window.setFrame(base, display: false)
+        a.window.aspectRatio = windowAspect(forPanes: 1, layout: .horizontal)
+        let item = findMenuItem(makeMainMenu(target: a), key: "p", option: true)
+        defer { withExtendedLifetime(a) {} }
+        check("proporción: el elemento «Proporción» (⌥⌘P) existe y está habilitado con un panel", item != nil && a.validateMenuItem(item!), "elemento \(item?.title ?? "nada")")
+
+        var pasos: [(PanelRatio, CGFloat)] = [(.r185, 1.85), (.r235, 2.35), (.r239, 2.39), (.r240, 2.40), (.r16x9, 16.0 / 9.0)]
+        for (r, d) in pasos {
+            a.cycleRatio()
+            let w = a.window.frame, content = a.grid.bounds.size, panel = a.grid.panes[0].frame.size
+            check("proporción: la acción pasa a \(String(format: "%.2f", d)):1 con el mismo ancho, esquina fija y el panel llena la ventana",
+                  a.ratio == r && close(w.width, 1280) && close(w.width / w.height, d, 0.01) && close(w.minX, 100) && close(w.maxY, 2220)
+                    && close(panel.width, content.width, 0.5) && close(panel.height, content.height, 0.5) && abs(a.window.aspectRatio.width / a.window.aspectRatio.height - d) < 0.0001,
+                  "ventana \(w), panel \(panel), contenido \(content)")
+        }
+        pasos.removeAll()
+
+        // Rellenar y centrar usa la proporción vigente (la misma que el arrastre de bordes: window.aspectRatio)
+        a.cycleRatio(); a.cycleRatio()   // 1.85:1 y 2.35:1
+        let fill = fillAndCenterRect(aspect: a.window.aspectRatio, in: NSRect(x: 0, y: 25, width: 3440, height: 1415))
+        check("proporción: rellenar y centrar con 2.35:1 conserva la proporción y cabe en el área",
+              abs(fill.width / fill.height - 2.35) < 0.001 && fill.width <= 3440.01 && fill.height <= 1415.01)
+
+        // Con más de un panel: deshabilitada, no hace nada, y abrir otro panel vuelve a 16:9
+        a.cycleRatio()   // sigue en una proporción de cine (2.39:1)
+        a.setPanes(2)
+        let w2 = a.window.frame
+        check("proporción: abrir un segundo panel desde 2.39:1 deja la ventana en 32:9 y la proporción en 16:9",
+              a.ratio == .r16x9 && close(w2.width / w2.height, 32.0 / 9.0, 0.01) && close(w2.width, 2560), "ventana \(w2), proporción \(a.ratio)")
+        check("proporción: con dos paneles el elemento del menú está deshabilitado", item != nil && !a.validateMenuItem(item!))
+        a.cycleRatio()
+        check("proporción: con dos paneles la acción no cambia nada", a.ratio == .r16x9 && a.window.frame == w2, "ventana \(a.window.frame)")
+        a.setPanes(3)
+        check("proporción: con tres paneles el elemento sigue deshabilitado", item != nil && !a.validateMenuItem(item!))
+        a.setPanes(1)
+        let w1 = a.window.frame
+        check("proporción: al volver a un panel la ventana queda en 16:9 y el elemento vuelve a estar habilitado",
+              a.ratio == .r16x9 && close(w1.width / w1.height, 16.0 / 9.0, 0.01) && item != nil && a.validateMenuItem(item!), "ventana \(w1)")
+    }
+
+    // Busca un elemento de menú por su tecla (y si usa ⌥)
+    func findMenuItem(_ menu: NSMenu, key: String, option: Bool) -> NSMenuItem? {
+        for it in menu.items {
+            if it.keyEquivalent == key && it.keyEquivalentModifierMask.contains(.option) == option && it.target != nil { return it }
+            if let sub = it.submenu, let found = findMenuItem(sub, key: key, option: option) { return found }
+        }
+        return nil
+    }
+
     func run() async {
         print("Autoprueba de Primer (páginas de \(fixtures.path))")
         for file in ["media.html", "unmutes.html"] {
@@ -1032,6 +1179,7 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         await checkAudio()
         await checkFocusClick()
         await checkThreePanes()
+        checkRatios()
         checkShortcuts()
         checkSession()
         await checkReload()
