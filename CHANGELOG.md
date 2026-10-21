@@ -6,6 +6,7 @@
 
 ## [2026-10-20] - Arranque del repositorio
 
+- docs: se agrega el cambio `add-cinema-ratios` de OpenSpec con propuesta, diseño, tareas y modificaciones a las especificaciones `window-chrome`, `panes`, `shortcuts` y `selftest` (con un solo panel, ⌥⌘P cambia la proporción de la ventana de forma secuencial entre 16:9, 2.35:1 y 2.39:1, solo está habilitada con un panel y la ventana vuelve a 16:9 al abrir otro panel)
 - docs: se actualiza en `AGENTS.md` el hecho sobre el cupo de transmisiones simultáneas: el autor midió el 2026-10-20 que la cuenta permitió tres reproducciones a la vez (un partido de OKC, uno de Necaxa y «Rápidos y Furiosos») sin que Prime Video rechazara ninguna, aunque el límite exacto, si lo hay, sigue sin medirse
 - docs: se actualiza el propósito de la especificación `panes` en `openspec/specs/panes/spec.md` para que describa de uno a tres paneles y su disposición horizontal o vertical
 - docs: se archiva el cambio `add-third-pane-and-layouts` en `openspec/changes/archive/2026-10-20-add-third-pane-and-layouts/` (propuesta, diseño, tareas y especificaciones), pues sus especificaciones ya están en `openspec/specs/`
