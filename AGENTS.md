@@ -1,6 +1,6 @@
 # Guía para agentes
 
-*Última modificación: 21 de octubre de 2026, 00:21 (CST)*
+*Última modificación: 21 de octubre de 2026, 01:49 (CST)*
 
 Este archivo es para un agente de IA que trabaja en este repositorio. El autor mantiene un repositorio de reglas personales (`rules`) con las *skills* de trabajo (`/commit`, `/changelogger`, `/git-init`, `/licensing`) y sus procedimientos. Está presente en `~/rules`, así que **si existe, manda sobre el resumen de este archivo**; este archivo recoge lo esencial por si no está.
 
@@ -18,6 +18,7 @@ Primer nació de DAZNer, otro proyecto del mismo autor. De allí se hereda la fo
 macos/     Swift sobre WKWebView; Primer.swift, build.sh y el paquete Primer.app
 shared/    páginas locales de prueba (fixtures/), ícono (assets/) y su script (scripts/)
 openspec/  especificaciones y cambios (el plan de trabajo, ver abajo)
+TODO.md    pendientes de revisión, cosas por probar y preguntas abiertas
 ```
 
 ## Cómo se trabaja: OpenSpec
@@ -69,7 +70,7 @@ Hipótesis heredadas de DAZN, **sin verificar en Prime Video**:
 - Que cambiar el tamaño de la ventana refresca el reproductor, por lo que conviene abrir el segundo panel cambiando primero la ventana.
 - Que una captura de pantalla de un video con DRM sale en negro: no sirve para diagnosticar.
 
-Pendiente de revisión posterior (TODO, decidido por el autor el 2026-10-21): al pasar de la disposición horizontal a la vertical (⌥⌘V) con paneles reproduciendo, el reproductor se refrescó aunque cada panel conservaba su tamaño; lo observó el autor el 2026-10-20 al validar `add-third-pane-and-layouts`, y el registro archivado de ese cambio dice que el primer panel seguía sin interrupción, lo que no coincide. Cambiar solo el alto de la ventana con ⌥⌘P no refrescó. No se sabe qué lo causa, si afecta a uno o a los dos paneles ni si pasa también de vertical a horizontal; no se corrige por ahora.
+Pendientes: están en [`TODO.md`](TODO.md). En particular, el refresco del reproductor al pasar de la disposición horizontal a la vertical es un pendiente de revisión que el autor decidió no corregir por ahora: no lo toques sin que lo pida.
 
 Preguntas abiertas: están en la sección «Open Questions» del diseño archivado (`openspec/changes/archive/2026-10-20-add-macos-viewer/design.md`). Siguen abiertas aunque el cambio esté archivado: quien abra un cambio nuevo debe traer a su diseño las que le afecten.
 

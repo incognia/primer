@@ -5,7 +5,7 @@ description: "Visor nativo y mínimo de los canales deportivos de Prime Video (N
 
 # Primer
 
-*Última modificación: 21 de octubre de 2026, 01:39 (CST)*
+*Última modificación: 21 de octubre de 2026, 01:49 (CST)*
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
@@ -22,7 +22,7 @@ Primer **no es un producto de Amazon, Prime Video, la NBA ni la MLB**. Consulta 
 |---|---|---|
 | macOS | Disponible | WebKit (`WKWebView`) |
 
-Por ahora solo existe la versión de macOS. Está construida y validada por su autor: ventana, paneles (de uno a tres, en horizontal o vertical), audio por foco, sesión y proporciones de cine. Dos cosas quedan sin cerrar: el 2.35:1 se aceptó sin probarlo con una película real, y el reproductor se refrescó al pasar de la disposición horizontal a la vertical, un pendiente que se revisará después (véase [AGENTS.md](AGENTS.md)).
+Por ahora solo existe la versión de macOS. Está construida y validada por su autor: ventana, paneles (de uno a tres, en horizontal o vertical), audio por foco, sesión y proporciones de cine. Dos cosas quedan sin cerrar: el 2.35:1 se aceptó sin probarlo con una película real, y el reproductor se refrescó al pasar de la disposición horizontal a la vertical, un pendiente que se revisará después (véase [AGENTS.md](AGENTS.md) y los pendientes en [TODO.md](TODO.md)).
 
 El plan, sus decisiones y el registro de lo que se validó están archivados, un cambio por carpeta, en `openspec/changes/archive/`:
 
@@ -66,6 +66,7 @@ Primer/
 ├── macos/     código de la versión de macOS y su paquete Primer.app
 ├── shared/    páginas de prueba de la autoprueba (fixtures/), ícono (assets/) y su script (scripts/)
 ├── openspec/  especificaciones del comportamiento (specs/) y cambios (changes/)
+├── TODO.md    pendientes de revisión, cosas por probar y preguntas abiertas
 ├── AGENTS.md  guía para agentes que trabajan en el repositorio
 └── ...        README, CHANGELOG, NOTICE y LICENSE
 ```
