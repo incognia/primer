@@ -21,16 +21,16 @@ Cada panel SHALL conservar la proporción 16:9, de modo que un panel llene una v
 #### Scenario: Dos paneles
 
 - **WHEN** hay dos paneles abiertos en una ventana de ancho W
-- **THEN** cada panel mide (W − hueco) / 2 de ancho y esa cantidad × 9 / 16 de alto, y la ventana conserva la proporción 32:9
+- **THEN** cada panel mide W / 2 de ancho y W × 9 / 32 de alto, y la ventana conserva la proporción 32:9
 
-### Requirement: Hueco entre paneles
+### Requirement: Paneles sin hueco
 
-Con dos paneles, la aplicación SHALL dejar un hueco de 8 px entre ellos, incluido dentro del ancho de la ventana, de modo que la proporción 32:9 de la ventana no cambie. El valor de 8 px se hereda de DAZNer y SHALL ajustarse si una persona lo valida y resulta inadecuado para Prime Video.
+Con dos paneles, la aplicación SHALL dejarlos juntos, sin ningún hueco entre ellos, de modo que cada uno mida la mitad del ancho de la ventana y toda su altura, y la proporción 32:9 de la ventana no cambie.
 
 #### Scenario: Medidas con dos paneles
 
 - **WHEN** hay dos paneles abiertos en una ventana de ancho W
-- **THEN** cada panel mide (W − 8) / 2 de ancho y entre ambos queda un hueco de 8 px
+- **THEN** cada panel mide W / 2 de ancho y la altura completa de la ventana, y entre ambos no queda hueco
 
 ### Requirement: Segundo panel a demanda
 

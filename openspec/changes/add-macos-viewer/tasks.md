@@ -24,18 +24,18 @@ Marcas: **[AUTO]** la ejecuta y la verifica el agente. **[HITL]** la valida el m
 
 ## 4. Paneles
 
-- [x] 4.1 [AUTO] Modo de uno y dos paneles de 16:9 con hueco de 8 px dentro del ancho de la ventana, y segundo panel creado a demanda y liberado al volver a uno; verificar con la autoprueba las medidas de «Paneles de proporción 16:9 anidados en la ventana» y «Hueco entre paneles».
-- [ ] 4.2 [HITL] Con un partido reproduciéndose, elegir dos paneles y volver a uno; reportar si el primer panel conserva su tamaño y no se refresca, y si el hueco de 8 px se ve bien; verificar que los escenarios de «Segundo panel a demanda» quedan confirmados.
+- [x] 4.1 [AUTO] Modo de uno y dos paneles de 16:9 sin hueco entre ellos, y segundo panel creado a demanda y liberado al volver a uno; verificar con la autoprueba las medidas de «Paneles de proporción 16:9 anidados en la ventana» y «Paneles sin hueco».
+- [x] 4.2 [HITL] Con un partido reproduciéndose, elegir dos paneles y volver a uno; reportar si el primer panel conserva su tamaño y no se refresca, y si los dos paneles pegados se ven bien; verificar que los escenarios de «Segundo panel a demanda» quedan confirmados.
 - [x] 4.3 [AUTO] Audio por foco con el panel sin foco silenciado aunque su página intente reactivar el audio, cambio de panel con foco, abrir una dirección en el panel con foco, y que el clic en un panel sin foco solo le dé el foco y no llegue a la página; verificar con la autoprueba que solo suena el panel con foco, que el silencio vuelve tras un intento de reactivación, que la dirección se carga solo en el panel con foco y que el clic que da el foco no llega a la página (el contador de eventos de ratón de la página de prueba no sube) pero el siguiente clic sí.
-- [ ] 4.4 [HITL] Con dos partidos de Prime Video en dos paneles en modo 32:9, cambiar el foco con el clic y con el atajo, pausar y reanudar cada partido, y silenciar un panel desde el reproductor; reportar si el clic en el panel sin foco solo le pasa el foco sin pausar su video, si el panel sin foco no se escucha en ningún momento, si el silencio manual se respeta y si el reproductor llena cada panel; verificar los escenarios de «Audio por foco».
+- [x] 4.4 [HITL] Con dos partidos de Prime Video en dos paneles en modo 32:9, cambiar el foco con el clic y con el atajo, pausar y reanudar cada partido, y silenciar un panel desde el reproductor; reportar si el clic en el panel sin foco solo le pasa el foco sin pausar su video, si el panel sin foco no se escucha en ningún momento, si el silencio manual se respeta y si el reproductor llena cada panel; verificar los escenarios de «Audio por foco».
 
 ## 5. Sesión, atajos y diagnóstico
 
-- [ ] 5.1 [AUTO] Almacén de datos persistente compartido entre paneles e instancias, atajos y edición de texto, y modo `--debug` que registra los eventos de audio y de cada panel sin datos personales; verificar que sin `--debug` no se crea `debug.log` y que con `--debug` el registro trae esos eventos y no contiene el contenido de los campos.
+- [x] 5.1 [AUTO] Almacén de datos persistente compartido entre paneles e instancias, atajos y edición de texto, y modo `--debug` que registra los eventos de audio y de cada panel sin datos personales; verificar que sin `--debug` no se crea `debug.log` y que con `--debug` el registro trae esos eventos y no contiene el contenido de los campos.
 - [ ] 5.2 [HITL] Cerrar y reabrir la aplicación, abrir una segunda instancia y pegar una contraseña en el inicio de sesión; reportar si la sesión se conserva, si la segunda instancia no pide iniciar sesión y si pegar funciona; verificar los escenarios de `session` y `shortcuts`.
 
 ## 6. Documentación y cierre
 
-- [ ] 6.1 [AUTO] Actualizar `README.md` con los requisitos y la compilación, y quitar el aviso de «en especificación»; verificar que un clon nuevo compila siguiendo solo el README.
-- [ ] 6.2 [AUTO] Correr `openspec validate --all --strict`; verificar que pasa sin fallos.
+- [x] 6.1 [AUTO] Actualizar `README.md` con los requisitos y la compilación, y quitar el aviso de «en especificación»; verificar que un clon nuevo compila siguiendo solo el README.
+- [x] 6.2 [AUTO] Correr `openspec validate --all --strict`; verificar que pasa sin fallos.
 - [ ] 6.3 [HITL] El mantenedor usa la aplicación en un partido completo con dos paneles y confirma que cumple el resultado esperado: sin bordes, dos partidos de Prime Video a la vez en 32:9 y el panel sin foco silenciado; verificar que queda registrado en `design.md` y archivar el cambio.

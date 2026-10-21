@@ -45,7 +45,7 @@ La autoprueba SHALL comprobar las medidas de uno y de dos paneles y la proporciÃ
 #### Scenario: Medidas con dos paneles
 
 - **WHEN** la autoprueba abre dos paneles en una ventana de ancho W
-- **THEN** cada panel mide (W âˆ’ 8) / 2 de ancho y la ventana mide 32:9
+- **THEN** cada panel mide W / 2 de ancho y la altura completa de la ventana, y la ventana mide 32:9
 
 ### Requirement: Alcance de la autoprueba
 
