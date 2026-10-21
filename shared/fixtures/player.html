@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reproductor simulado</title>
+<!--
+  Página de prueba de la autoprueba (--selftest). Simula un reproductor con su botón de pantalla
+  completa, sin red ni cuenta. NO es Prime Video: solo comprueba el script compartido.
+  La autoprueba la maneja con window.__fixture.
+-->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #eee; }
+  header, footer { padding: 12px 16px; background: #222; }
+  .layout { display: flex; gap: 12px; padding: 12px; }
+  aside { width: 160px; background: #1a1a1a; padding: 12px; }
+  main { flex: 1; }
+  #player { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #345; }
+  #player video { position: absolute; inset: 0; width: 100%; height: 100%; background: #234; }
+  #controls { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px; background: rgba(0,0,0,.5); }
+  button { padding: 6px 12px; }
+</style>
+</head>
+<body>
+<header id="top">Cabecera de la página</header>
+<div class="layout">
+  <aside id="side">Menú lateral</aside>
+  <main>
+    <div id="player">
+      <video id="v" muted playsinline></video>
+      <div id="controls"><button id="fs" type="button">Pantalla completa</button></div>
+    </div>
+    <p id="status">sin pantalla completa</p>
+  </main>
+</div>
+<footer id="bottom">Pie de la página</footer>
+
+<script>
+(() => {
+  const player = document.getElementById('player');
+  const status = document.getElementById('status');
+  document.getElementById('fs').addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen(); else player.requestFullscreen();
+  });
+  document.addEventListener('fullscreenchange', () => {
+    status.textContent = document.fullscreenElement ? 'en pantalla completa: ' + document.fullscreenElement.id : 'sin pantalla completa';
+  });
+  // Interfaz para la autoprueba
+  window.__fixture = {
+    name: 'player',
+    target: () => player,
+    request: () => player.requestFullscreen(),
+    exit: () => document.exitFullscreen(),
+    fullscreenId: () => document.fullscreenElement ? document.fullscreenElement.id : null,
+    rect: () => { const r = player.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; },
+    viewport: () => ({ w: innerWidth, h: innerHeight }),
+    styleAttr: () => player.getAttribute('style')
+  };
+  console.log('fixture-ready:player');
+})();
+</script>
+</body>
+</html>

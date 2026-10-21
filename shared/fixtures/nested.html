@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reproductor en contenedores anidados</title>
+<!--
+  Página de prueba de la autoprueba (--selftest). El reproductor vive dentro de varios contenedores
+  anidados con propiedades que impiden que un elemento fijo llene la ventana (transform, filter,
+  overflow oculto, contain) y con hermanos en cada nivel. Comprueba que el script compartido libera
+  esos ancestros y oculta lo demás. NO es Prime Video.
+-->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #eee; }
+  .sib { padding: 8px 12px; background: #222; margin: 4px; }
+  #l1 { padding: 12px; overflow: hidden; }
+  #l2 { transform: translate(0, 0); padding: 12px; background: #181818; }
+  #l3 { filter: blur(0); padding: 12px; background: #1c1c1c; }
+  #l4 { contain: paint; overflow: hidden; padding: 12px; background: #202020; }
+  #l5 { perspective: 1000px; padding: 12px; background: #242424; opacity: .99; }
+  #l6 { padding: 12px; clip-path: inset(0); background: #282828; }
+  #player { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #354; }
+  #player video { position: absolute; inset: 0; width: 100%; height: 100%; background: #243; }
+  #controls { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px; background: rgba(0,0,0,.5); }
+  button { padding: 6px 12px; }
+</style>
+</head>
+<body>
+<div class="sib" id="s0">Hermano de nivel 0</div>
+<div id="l1"><div class="sib" id="s1">Hermano de nivel 1</div>
+ <div id="l2"><div class="sib" id="s2">Hermano de nivel 2</div>
+  <div id="l3"><div class="sib" id="s3">Hermano de nivel 3</div>
+   <div id="l4"><div class="sib" id="s4">Hermano de nivel 4</div>
+    <div id="l5"><div class="sib" id="s5">Hermano de nivel 5</div>
+     <div id="l6"><div class="sib" id="s6">Hermano de nivel 6</div>
+      <div id="player">
+        <video id="v" muted playsinline></video>
+        <div id="controls"><button id="fs" type="button">Pantalla completa</button></div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+<p id="status">sin pantalla completa</p>
+
+<script>
+(() => {
+  const player = document.getElementById('player');
+  const status = document.getElementById('status');
+  document.getElementById('fs').addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen(); else player.requestFullscreen();
+  });
+  document.addEventListener('fullscreenchange', () => {
+    status.textContent = document.fullscreenElement ? 'en pantalla completa: ' + document.fullscreenElement.id : 'sin pantalla completa';
+  });
+
+  window.__fixture = {
+    name: 'nested',
+    target: () => player,
+    request: () => player.requestFullscreen(),
+    exit: () => document.exitFullscreen(),
+    fullscreenId: () => document.fullscreenElement ? document.fullscreenElement.id : null,
+    rect: () => { const r = player.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; },
+    viewport: () => ({ w: innerWidth, h: innerHeight }),
+    styleAttr: () => player.getAttribute('style'),
+    // Hermanos que siguen visibles durante el modo (debería ser ninguno)
+    visibleSiblings: () => [...document.querySelectorAll('.sib')].filter(e => getComputedStyle(e).visibility !== 'hidden').map(e => e.id)
+  };
+  console.log('fixture-ready:nested');
+})();
+</script>
+</body>
+</html>
