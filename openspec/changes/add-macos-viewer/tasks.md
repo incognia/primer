@@ -32,7 +32,7 @@ Marcas: **[AUTO]** la ejecuta y la verifica el agente. **[HITL]** la valida el m
 ## 5. Sesión, atajos y diagnóstico
 
 - [x] 5.1 [AUTO] Almacén de datos persistente compartido entre paneles e instancias, atajos y edición de texto, y modo `--debug` que registra los eventos de audio y de cada panel sin datos personales; verificar que sin `--debug` no se crea `debug.log` y que con `--debug` el registro trae esos eventos y no contiene el contenido de los campos.
-- [ ] 5.2 [HITL] Cerrar y reabrir la aplicación, abrir una segunda instancia y pegar una contraseña en el inicio de sesión; reportar si la sesión se conserva, si la segunda instancia no pide iniciar sesión y si pegar funciona; verificar los escenarios de `session` y `shortcuts`.
+- [x] 5.2 [HITL] Cerrar y reabrir la aplicación, abrir una segunda instancia y pegar una contraseña en el inicio de sesión; reportar si la sesión se conserva, si la segunda instancia no pide iniciar sesión y si pegar funciona; verificar los escenarios de `session` y `shortcuts`.
 
 ## 6. Documentación y cierre
 
