@@ -6,6 +6,8 @@
 
 ## [2026-10-20] - Arranque del repositorio
 
+- docs: se archiva el cambio `add-third-pane-and-layouts` en `openspec/changes/archive/2026-10-20-add-third-pane-and-layouts/` (propuesta, diseño, tareas y especificaciones), pues sus especificaciones ya están en `openspec/specs/`
+- docs: se sincronizan con `openspec/specs/` las modificaciones de `add-third-pane-and-layouts` a las especificaciones `panes`, `window-chrome`, `shortcuts` y `selftest` (tercer panel, disposiciones horizontal y vertical, y proporción de la ventana según el número de paneles), que pasan a formar parte del contrato del proyecto
 - feat: se agrega el ícono de la aplicación, una imagen generada por el autor (un balón de basquetbol con un botón de reproducción, sin logotipos de Amazon, Prime Video, la NBA ni la MLB), con `shared/assets/icon.png`, el script `shared/scripts/make-icon.swift` que genera `macos/Primer.app/Contents/Resources/app.icns`, la clave `CFBundleIconFile` en `Info.plist`, y se actualizan `NOTICE.md`, `README.md` (cómo regenerarlo) y `AGENTS.md` (estructura de `shared/`)
 - docs: se actualizan `README.md` y `AGENTS.md` para describir de uno a tres paneles (dos en 32:9, tres en 48:9 en horizontal; 16:18 y 16:27 en vertical), los atajos ⌘3, ⌥⌘H y ⌥⌘V, que la disposición no se recuerda entre sesiones y que la cuenta admita tres reproducciones a la vez sigue sin verificarse
 - docs: se marcan como hechas en `tasks.md` las tareas 1.1 a 4.2 y 5.1 a 5.3 de `add-third-pane-and-layouts`, y se registra en `design.md` la validación del mantenedor («confirmo todo») con tres paneles, las disposiciones y ⌘F, sin que quedara medido el cupo de transmisiones simultáneas
