@@ -27,7 +27,7 @@ La aplicación SHALL ofrecer atajos con la tecla ⌘: 1, 2 y 3 para el número d
 #### Scenario: Proporción
 
 - **WHEN** el usuario pulsa ⌥⌘P con un panel abierto
-- **THEN** la ventana pasa a la siguiente proporción de la secuencia 16:9, 2.35:1 y 2.39:1
+- **THEN** la ventana pasa a la siguiente proporción de la secuencia 16:9, 1.85:1, 2.35:1, 2.39:1 y 2.40:1
 
 #### Scenario: Proporción con más de un panel
 

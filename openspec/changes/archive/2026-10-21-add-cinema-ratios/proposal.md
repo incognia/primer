@@ -1,10 +1,10 @@
 ## Why
 
-Muchas películas no son 16:9: las de acción llegan en 2.39:1 y otras en 2.35:1. En un panel 16:9, Prime Video las muestra con barras negras arriba y abajo (se vio con una película en la prueba de tres paneles), y esas barras ocupan pantalla sin aportar nada. Con un solo panel, la ventana podría tener la proporción de la película y llenarla.
+Muchas películas no son 16:9: las de acción llegan en 2.39:1 y otras en 2.35:1. En un panel 16:9, Prime Video las muestra con barras negras arriba y abajo (se vio con una película en la prueba de tres paneles), y esas barras ocupan pantalla sin aportar nada. Con un solo panel, la ventana podría tener la proporción de la película y llenarla. Las proporciones de cine que se piden salen de películas reales, según el mantenedor (2026-10-20): «Rápidos y Furiosos» está en 2.39:1 y «Rápidos y Furiosos 7» en 2.40:1, y 2.35:1 es la del cinemascope clásico. Una tercera, «Volver al Futuro II», se ve casi en 16:9 pero se exhibió en 1.85:1, y el mantenedor pidió ese ajuste fino.
 
 ## What Changes
 
-- Con **un solo panel**, una acción nueva, ⌥⌘P («proporción»), cambia la proporción de la ventana de forma secuencial: 16:9 → 2.35:1 → 2.39:1 → 16:9 → …
+- Con **un solo panel**, una acción nueva, ⌥⌘P («proporción»), cambia la proporción de la ventana de forma secuencial: 16:9 → 1.85:1 → 2.35:1 → 2.39:1 → 2.40:1 → 16:9 → … El 2.40:1 se agregó tras la primera prueba del mantenedor (2026-10-20): con 2.39:1 todavía quedaban barras negras. El 1.85:1 se agregó después, a petición suya, justo detrás del 16:9.
 - La acción **solo está habilitada con un panel**: con dos o tres paneles el elemento del menú aparece deshabilitado y el atajo no hace nada.
 - Al abrir un segundo panel (⌘2, ⌘3), la ventana vuelve a 16:9 antes de repartir los paneles, porque los paneles múltiples son siempre 16:9. Al volver a un panel, la proporción sigue siendo 16:9: no se recuerda la que había.
 - Al cambiar la proporción se conserva el ancho y la esquina superior izquierda de la ventana; cambia el alto. El panel llena la ventana, así que el reproductor se ajusta al nuevo tamaño.
@@ -13,7 +13,7 @@ Muchas películas no son 16:9: las de acción llegan en 2.39:1 y otras en 2.35:1
 
 Fuera del alcance:
 
-- Otras proporciones (21:9, 1.85:1, 4:3, 2.20:1) o una proporción escrita a mano.
+- Otras proporciones (21:9, 4:3, 2.20:1) o una proporción escrita a mano; la secuencia es solo 16:9, 1.85:1, 2.35:1, 2.39:1 y 2.40:1.
 - Detectar la proporción de la película y ajustar la ventana por sí sola: el usuario elige.
 - Proporciones distintas de 16:9 con dos o tres paneles.
 - Recordar la proporción entre aperturas de la aplicación, o al volver de varios paneles a uno.
@@ -27,7 +27,7 @@ Ninguna.
 
 ### Modified Capabilities
 
-- `window-chrome`: la proporción fija con un panel puede ser 16:9, 2.35:1 o 2.39:1, el ciclo secuencial, su deshabilitado con más de un panel y el regreso a 16:9 al abrir otro panel.
+- `window-chrome`: la proporción fija con un panel puede ser 16:9, 1.85:1, 2.35:1, 2.39:1 o 2.40:1, el ciclo secuencial, su deshabilitado con más de un panel y el regreso a 16:9 al abrir otro panel.
 - `panes`: un panel llena la ventana con la proporción vigente; con dos o tres paneles cada panel sigue siendo 16:9.
 - `shortcuts`: ⌥⌘P para la proporción.
 - `selftest`: comprobaciones del ciclo, las medidas, el deshabilitado y el regreso a 16:9.

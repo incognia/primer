@@ -2,17 +2,17 @@
 
 ### Requirement: Proporción de cine con un solo panel
 
-Con un solo panel, la aplicación SHALL ofrecer una acción que cambie la proporción de la ventana de forma secuencial entre 16:9, 2.35:1 y 2.39:1, y de 2.39:1 vuelva a 16:9. La ventana SHALL abrir en 16:9. Al cambiar la proporción, la ventana SHALL conservar su ancho y su esquina superior izquierda, y SHALL reducirse con la misma proporción hasta caber si no cabe en el área útil de la pantalla. Con dos o más paneles la acción SHALL estar deshabilitada, y al abrir un segundo panel la ventana SHALL volver a 16:9 antes de repartir los paneles. Al volver a un solo panel la proporción SHALL ser 16:9.
+Con un solo panel, la aplicación SHALL ofrecer una acción que cambie la proporción de la ventana de forma secuencial entre 16:9, 1.85:1, 2.35:1, 2.39:1 y 2.40:1, y de 2.40:1 vuelva a 16:9. La ventana SHALL abrir en 16:9. Al cambiar la proporción, la ventana SHALL conservar su ancho y su esquina superior izquierda, y SHALL reducirse con la misma proporción hasta caber si no cabe en el área útil de la pantalla. Con dos o más paneles la acción SHALL estar deshabilitada, y al abrir un segundo panel la ventana SHALL volver a 16:9 antes de repartir los paneles. Al volver a un solo panel la proporción SHALL ser 16:9.
 
 #### Scenario: Ciclo con un panel
 
-- **WHEN** el usuario ejecuta la acción tres veces seguidas con un panel abierto en 16:9
-- **THEN** la ventana pasa a 2.35:1, luego a 2.39:1 y después vuelve a 16:9, con el mismo ancho en cada paso
+- **WHEN** el usuario ejecuta la acción cinco veces seguidas con un panel abierto en 16:9
+- **THEN** la ventana pasa a 1.85:1, luego a 2.35:1, luego a 2.39:1, luego a 2.40:1 y después vuelve a 16:9, con el mismo ancho en cada paso
 
 #### Scenario: Medidas de la ventana
 
-- **WHEN** la ventana de ancho W pasa a 2.35:1 o a 2.39:1
-- **THEN** su alto es W / 2.35 o W / 2.39, y conserva su esquina superior izquierda
+- **WHEN** la ventana de ancho W pasa a 1.85:1, a 2.35:1, a 2.39:1 o a 2.40:1
+- **THEN** su alto es W / 1.85, W / 2.35, W / 2.39 o W / 2.40, y conserva su esquina superior izquierda
 
 #### Scenario: Con más de un panel
 
@@ -21,7 +21,7 @@ Con un solo panel, la aplicación SHALL ofrecer una acción que cambie la propor
 
 #### Scenario: Abrir un segundo panel
 
-- **WHEN** el usuario abre un segundo panel con la ventana en 2.35:1 o en 2.39:1
+- **WHEN** el usuario abre un segundo panel con la ventana en una proporción distinta de 16:9 (1.85:1, 2.35:1, 2.39:1 o 2.40:1)
 - **THEN** la ventana vuelve a 16:9, el primer panel conserva su ancho y los dos paneles quedan en 32:9
 
 #### Scenario: Volver a un panel
@@ -38,12 +38,12 @@ Con un solo panel, la aplicación SHALL ofrecer una acción que cambie la propor
 
 ### Requirement: Proporción fija
 
-La aplicación SHALL permitir redimensionar la ventana desde sus bordes solo conservando la proporción que le corresponde: con n paneles, 16n:9 en la disposición horizontal y 16:9n en la vertical (16:9 con un panel; 32:9 y 16:18 con dos; 48:9 y 16:27 con tres); con un solo panel, además, la que haya elegido el usuario entre 16:9, 2.35:1 y 2.39:1.
+La aplicación SHALL permitir redimensionar la ventana desde sus bordes solo conservando la proporción que le corresponde: con n paneles, 16n:9 en la disposición horizontal y 16:9n en la vertical (16:9 con un panel; 32:9 y 16:18 con dos; 48:9 y 16:27 con tres); con un solo panel, además, la que haya elegido el usuario entre 16:9, 1.85:1, 2.35:1, 2.39:1 y 2.40:1.
 
 #### Scenario: Redimensionar con un panel
 
 - **WHEN** el usuario arrastra un borde con un panel abierto
-- **THEN** el ancho y el alto cambian juntos y la proporción sigue siendo la vigente (16:9, 2.35:1 o 2.39:1)
+- **THEN** el ancho y el alto cambian juntos y la proporción sigue siendo la vigente (16:9, 1.85:1, 2.35:1, 2.39:1 o 2.40:1)
 
 #### Scenario: Redimensionar con dos paneles
 
