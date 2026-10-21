@@ -9,6 +9,45 @@ import WebKit
 // y del canal de la cuenta (ver «Open Questions» en openspec/changes/add-macos-viewer/design.md).
 let homeURL = URL(string: "https://www.primevideo.com/")!
 
+// Diagnóstico opcional: solo con --debug. Escribe debug.log junto a la aplicación y habilita el inspector web.
+// Nunca se leen contraseñas, códigos ni el contenido de los campos de la página; de una dirección solo se registran servidor y ruta.
+let debugMode = CommandLine.arguments.contains("--debug")
+
+// Lo único que se registra de una dirección: servidor y ruta, sin consulta ni fragmento (pueden llevar fichas, correos o códigos).
+// Las direcciones data: pueden llevar contenido y no se registran.
+func debugSafeLocation(_ url: URL?) -> String {
+    guard let url else { return "(sin dirección)" }
+    if url.scheme == "data" { return "data:" }
+    var s = (url.host ?? "") + url.path
+    if s.isEmpty { s = url.scheme ?? "" }
+    return s.count > 80 ? String(s.prefix(80)) + "…" : s
+}
+
+@MainActor
+final class DebugLog {
+    static let shared = DebugLog()
+    let path = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("debug.log").path
+    private(set) var linesWritten = 0
+
+    func write(_ message: String) {
+        guard debugMode else { return }
+        linesWritten += 1
+        let line = "[\(ISO8601DateFormatter().string(from: Date()))] \(message)\n"
+        if let h = FileHandle(forWritingAtPath: path) { h.seekToEndOfFile(); h.write(line.data(using: .utf8)!); try? h.close() }
+        else { try? line.write(toFile: path, atomically: true, encoding: .utf8) }
+    }
+}
+
+// Recibe los avisos del guardián de audio (solo con --debug). Se ignora cualquier mensaje que no sea el aviso conocido.
+final class PaneLogHandler: NSObject, WKScriptMessageHandler {
+    static let shared = PaneLogHandler()
+    func userContentController(_ c: WKUserContentController, didReceive m: WKScriptMessage) {
+        guard (m.body as? String) == "reapplied" else { return }
+        let name = (m.webView as? Pane)?.logName ?? "?"
+        Task { @MainActor in DebugLog.shared.write("audio: el reproductor del panel \(name) reactivó el sonido y se volvió a silenciar") }
+    }
+}
+
 // Franja invisible superior de 14 px: arrastrar desde aquí mueve la ventana; doble clic alterna maximizar
 final class DragStrip: NSView {
     static let height: CGFloat = 14
@@ -71,7 +110,8 @@ let audioGuardScript = """
   if (window.__primerAudio) return;
   const state = { muted: false, reapplied: 0 };
   const media = () => [...document.querySelectorAll('video,audio')];
-  const enforce = (m) => { if (state.muted && !m.muted) { m.__primerForced = true; m.muted = true; state.reapplied++; } };
+  const note = () => { if (window.__primerDebug) { try { window.webkit.messageHandlers.primerLog.postMessage('reapplied'); } catch (e) {} } };
+  const enforce = (m) => { if (state.muted && !m.muted) { m.__primerForced = true; m.muted = true; state.reapplied++; note(); } };
   window.__primerAudio = {
     setMuted(on) {
       state.muted = !!on;
@@ -98,6 +138,10 @@ func makePaneConfiguration(persistent: Bool) -> WKWebViewConfiguration {
     // (tarea 1.2, 2026-10-20) y Safari sí reproduce. Se añade el sufijo de Safari a la identificación
     // real del motor, que sigue siendo el WebKit del sistema. Versión: la de Safari de esta Mac.
     cfg.applicationNameForUserAgent = "Version/27.0 Safari/605.1.15"
+    if debugMode {
+        cfg.userContentController.addUserScript(WKUserScript(source: "window.__primerDebug = true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        cfg.userContentController.add(PaneLogHandler.shared, name: "primerLog")
+    }
     cfg.userContentController.addUserScript(WKUserScript(source: audioGuardScript, injectionTime: .atDocumentStart, forMainFrameOnly: true))
     return cfg
 }
@@ -106,11 +150,18 @@ func makePaneConfiguration(persistent: Bool) -> WKWebViewConfiguration {
 final class Pane: WKWebView, WKNavigationDelegate {
     var onFocus: (() -> Void)?
     var onFinish: (() -> Void)?
-    var wantsMuted = false { didSet { pushMute() } }
+    var logName = "?"
+    var wantsMuted = false {
+        didSet {
+            pushMute()
+            if oldValue != wantsMuted { DebugLog.shared.write("audio: panel \(logName) \(wantsMuted ? "silenciado" : "con sonido")") }
+        }
+    }
 
     override init(frame: CGRect, configuration: WKWebViewConfiguration) {
         super.init(frame: frame, configuration: configuration)
         navigationDelegate = self
+        isInspectable = debugMode                       // el inspector web solo existe con --debug
     }
     required init?(coder: NSCoder) { fatalError("no se usa") }
 
@@ -136,14 +187,31 @@ final class Pane: WKWebView, WKNavigationDelegate {
     }
 
     // El estado del guardián vive en cada documento: al cargar una página nueva hay que volver a indicárselo
-    func webView(_ w: WKWebView, didCommit n: WKNavigation!) { pushMute() }
-    func webView(_ w: WKWebView, didFinish n: WKNavigation!) { pushMute(); onFinish?() }
+    func webView(_ w: WKWebView, didCommit n: WKNavigation!) {
+        pushMute()
+        DebugLog.shared.write("panel \(logName): carga \(debugSafeLocation(url))")
+    }
+    func webView(_ w: WKWebView, didFinish n: WKNavigation!) {
+        pushMute()
+        DebugLog.shared.write("panel \(logName): terminó de cargar")
+        onFinish?()
+    }
+    func webView(_ w: WKWebView, didFail n: WKNavigation!, withError e: Error) {
+        DebugLog.shared.write("panel \(logName): falló la carga (\((e as NSError).code))")
+    }
+    func webView(_ w: WKWebView, didFailProvisionalNavigation n: WKNavigation!, withError e: Error) {
+        DebugLog.shared.write("panel \(logName): falló la carga (\((e as NSError).code))")
+    }
+    override func setFrameSize(_ s: NSSize) {
+        let changed = s != frame.size
+        super.setFrameSize(s)
+        if changed { DebugLog.shared.write("panel \(logName): tamaño \(Int(s.width))×\(Int(s.height))") }
+    }
 }
 
-// Uno o dos paneles de 16:9. Con uno, el panel llena la ventana. Con dos, quedan lado a lado con 8 px de hueco DENTRO del ancho
-// de la ventana, y cada uno mide (ancho − 8) / 2 por esa cantidad × 9 / 16. El segundo panel existe solo mientras se pide.
+// Uno o dos paneles de 16:9. Con uno, el panel llena la ventana. Con dos, quedan pegados, sin hueco: cada uno mide la mitad del
+// ancho de la ventana y toda su altura (32:9 se reparte exacto en dos 16:9). El segundo panel existe solo mientras se pide.
 final class PaneGrid: NSView {
-    static let gap: CGFloat = 8
     let factory: () -> NSView
     private(set) var panes: [NSView] = []
 
@@ -163,6 +231,7 @@ final class PaneGrid: NSView {
         panes.append(p)
         addSubview(p)
         if let pane = p as? Pane {
+            pane.logName = "\(panes.count)"
             pane.onFocus = { [weak self, weak pane] in
                 guard let self, let pane, let i = self.panes.firstIndex(of: pane) else { return }
                 self.setFocus(i)
@@ -182,6 +251,7 @@ final class PaneGrid: NSView {
         let p = panes.removeLast()
         (p as? WKWebView)?.stopLoading()
         p.removeFromSuperview()
+        DebugLog.shared.write("panel \((p as? Pane)?.logName ?? "?"): se quitó de la ventana y se liberó")
         if focused >= panes.count { focused = 0 }
         applyAudio()
     }
@@ -191,6 +261,7 @@ final class PaneGrid: NSView {
         guard panes.indices.contains(i) else { return }
         focused = i
         window?.makeFirstResponder(panes[i])
+        DebugLog.shared.write("audio: el foco pasó al panel \(i + 1)")
         applyAudio()
     }
     func nextPane() { setFocus((focused + 1) % panes.count) }
@@ -201,6 +272,9 @@ final class PaneGrid: NSView {
     // La dirección se abre solo en el panel con foco
     func openAddress(_ url: URL) { (panes[focused] as? Pane)?.load(URLRequest(url: url)) }
 
+    // Recargar solo el panel con foco
+    func reloadFocused() { (panes[focused] as? Pane)?.reload() }
+
     override func setFrameSize(_ s: NSSize) {
         super.setFrameSize(s)
         layoutPanes()
@@ -208,21 +282,20 @@ final class PaneGrid: NSView {
 
     func layoutPanes() {
         if panes.count == 1 { panes[0].frame = bounds; return }
-        let pw = (bounds.width - PaneGrid.gap) / 2, ph = pw * 9 / 16
-        let y = (bounds.height - ph) / 2
-        panes[0].frame = NSRect(x: 0, y: y, width: pw, height: ph)
-        panes[1].frame = NSRect(x: pw + PaneGrid.gap, y: y, width: pw, height: ph)
+        let pw = bounds.width / 2
+        panes[0].frame = NSRect(x: 0, y: 0, width: pw, height: bounds.height)
+        panes[1].frame = NSRect(x: pw, y: 0, width: pw, height: bounds.height)
     }
 }
 
 // Proporción de la ventana: 16:9 con un panel y 32:9 con dos (dos paneles de 16:9 lado a lado)
 func windowAspect(forPanes n: Int) -> NSSize { NSSize(width: 16 * CGFloat(n), height: 9) }
 
-// Marco de la ventana al pasar a n paneles. Con dos, mide el doble más el hueco, de modo que el panel que ya estaba abierto
+// Marco de la ventana al pasar a n paneles. Con dos, mide exactamente el doble, de modo que el panel que ya estaba abierto
 // conserva su tamaño y no se refresca (cambiar el tamaño de la ventana rehace el reproductor); se limita al ancho de la pantalla.
 // Al volver a uno mide lo que medía cada panel. Conserva la esquina superior izquierda.
 func windowFrame(forPanes n: Int, from old: NSRect, maxWidth: CGFloat) -> NSRect {
-    let w: CGFloat = n == 2 ? min(old.width * 2 + PaneGrid.gap, maxWidth) : max((old.width - PaneGrid.gap) / 2, 320)
+    let w: CGFloat = n == 2 ? min(old.width * 2, maxWidth) : max(old.width / 2, 320)
     let h = w * 9 / (16 * CGFloat(n))
     return NSRect(x: old.minX, y: old.maxY - h, width: w, height: h)
 }
@@ -253,6 +326,8 @@ final class App: NSObject, NSApplicationDelegate, WKUIDelegate {
     @objc func onePane() { setPanes(1) }
     @objc func twoPanes() { setPanes(2) }
     @objc func nextPane() { grid.nextPane() }
+    @objc func reload() { grid.reloadFocused() }
+    @objc func goHome() { grid.openAddress(homeURL) }
 
     // Abrir una dirección en el panel con foco (⌘L)
     @objc func openAddress() {
@@ -308,41 +383,49 @@ final class App: NSObject, NSApplicationDelegate, WKUIDelegate {
 
     @objc func toggleFloat() { toggleAlwaysOnTop(window) }
 
-    // Salir (⌘Q), Ventana (⌘F y ⌘T) y Edición (deshacer, cortar, copiar, pegar y seleccionar todo)
-    func installMenu() {
-        let main = NSMenu()
+    func installMenu() { NSApp.mainMenu = makeMainMenu(target: self) }
+}
 
-        let appTop = NSMenuItem(); main.addItem(appTop)
-        let appMenu = NSMenu(title: "Primer"); appTop.submenu = appMenu
-        appMenu.addItem(NSMenuItem(title: "Salir de Primer", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-
-        let winTop = NSMenuItem(); main.addItem(winTop)
-        let winMenu = NSMenu(title: "Ventana"); winTop.submenu = winMenu
-        for (t, sel, key) in [("Rellenar y centrar", #selector(fillCenter), "f"), ("Siempre encima", #selector(toggleFloat), "t")] {
-            let it = NSMenuItem(title: t, action: sel, keyEquivalent: key)
-            it.target = self
-            winMenu.addItem(it)
-        }
-
-        let panesTop = NSMenuItem(); main.addItem(panesTop)
-        let panesMenu = NSMenu(title: "Paneles"); panesTop.submenu = panesMenu
-        for (t, sel, key) in [("1 panel", #selector(onePane), "1"), ("2 paneles", #selector(twoPanes), "2"),
-                              ("Siguiente panel", #selector(nextPane), "`"), ("Abrir dirección…", #selector(openAddress), "l")] {
-            let it = NSMenuItem(title: t, action: sel, keyEquivalent: key)
-            it.target = self
-            panesMenu.addItem(it)
-        }
-
-        let editTop = NSMenuItem(); main.addItem(editTop)
-        let edit = NSMenu(title: "Edición"); editTop.submenu = edit
-        for (t, sel, key) in [("Deshacer", Selector(("undo:")), "z"), ("Cortar", #selector(NSText.cut(_:)), "x"),
-                              ("Copiar", #selector(NSText.copy(_:)), "c"), ("Pegar", #selector(NSText.paste(_:)), "v"),
-                              ("Seleccionar todo", #selector(NSText.selectAll(_:)), "a")] {
-            edit.addItem(NSMenuItem(title: t, action: sel, keyEquivalent: key))
-        }
-
-        NSApp.mainMenu = main
+// Menú de la aplicación, con los atajos de ⌘: Salir (Q); Ventana: rellenar y centrar (F), siempre encima (T) y cerrar (W);
+// Paneles: 1 y 2 paneles, siguiente panel (`), abrir dirección (L), recargar (R) e inicio de Prime Video (H);
+// Edición: deshacer, cortar, copiar, pegar y seleccionar todo. Recargar, inicio y abrir dirección actúan sobre el panel con foco.
+@MainActor
+func makeMainMenu(target: App) -> NSMenu {
+    let main = NSMenu()
+    func add(_ menu: NSMenu, _ title: String, _ action: Selector, _ key: String, targeted: Bool = true) {
+        let it = NSMenuItem(title: title, action: action, keyEquivalent: key)
+        if targeted { it.target = target }
+        menu.addItem(it)
     }
+    func submenu(_ title: String) -> NSMenu {
+        let top = NSMenuItem(); main.addItem(top)
+        let m = NSMenu(title: title); top.submenu = m
+        return m
+    }
+
+    let app = submenu("Primer")
+    add(app, "Salir de Primer", #selector(NSApplication.terminate(_:)), "q", targeted: false)
+
+    let win = submenu("Ventana")
+    add(win, "Rellenar y centrar", #selector(App.fillCenter), "f")
+    add(win, "Siempre encima", #selector(App.toggleFloat), "t")
+    add(win, "Cerrar", #selector(NSWindow.performClose(_:)), "w", targeted: false)
+
+    let panes = submenu("Paneles")
+    add(panes, "1 panel", #selector(App.onePane), "1")
+    add(panes, "2 paneles", #selector(App.twoPanes), "2")
+    add(panes, "Siguiente panel", #selector(App.nextPane), "`")
+    add(panes, "Abrir dirección…", #selector(App.openAddress), "l")
+    add(panes, "Recargar", #selector(App.reload), "r")
+    add(panes, "Inicio de Prime Video", #selector(App.goHome), "h")
+
+    let edit = submenu("Edición")
+    add(edit, "Deshacer", Selector(("undo:")), "z", targeted: false)
+    add(edit, "Cortar", #selector(NSText.cut(_:)), "x", targeted: false)
+    add(edit, "Copiar", #selector(NSText.copy(_:)), "c", targeted: false)
+    add(edit, "Pegar", #selector(NSText.paste(_:)), "v", targeted: false)
+    add(edit, "Seleccionar todo", #selector(NSText.selectAll(_:)), "a", targeted: false)
+    return main
 }
 
 enum SelfTestError: Error { case missing(String) }
@@ -538,6 +621,86 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         check("audio: abrir una dirección no cambia el otro panel", b.url?.absoluteString == urlB, "antes \(urlB ?? "nil"), después \(b.url?.absoluteString ?? "nil")")
     }
 
+    // Atajos del menú (tarea 5.1): los de la especificación existen con la tecla ⌘ y cada acción tiene quien la atienda
+    func checkShortcuts() {
+        var items: [String: NSMenuItem] = [:]
+        func walk(_ m: NSMenu) { for it in m.items { if !it.keyEquivalent.isEmpty { items[it.keyEquivalent] = it }; if let s = it.submenu { walk(s) } } }
+        // El destino de un elemento de menú es una referencia débil: la App debe seguir viva mientras se revisa
+        let objetivo = App()
+        walk(makeMainMenu(target: objetivo))
+        defer { withExtendedLifetime(objetivo) {} }
+        let esperados = [("1", "1 panel"), ("2", "2 paneles"), ("l", "Abrir dirección…"), ("r", "Recargar"), ("h", "Inicio de Prime Video"),
+                         ("`", "Siguiente panel"), ("t", "Siempre encima"), ("f", "Rellenar y centrar"), ("w", "Cerrar"), ("q", "Salir de Primer"),
+                         ("z", "Deshacer"), ("x", "Cortar"), ("c", "Copiar"), ("v", "Pegar"), ("a", "Seleccionar todo")]
+        for (key, title) in esperados {
+            let it = items[key]
+            check("atajos: ⌘\(key) es «\(title)»", it?.title == title && it?.keyEquivalentModifierMask.contains(.command) == true,
+                  "encontrado: \(it?.title ?? "nada")")
+        }
+        let sinAtender = items.values.filter { it in
+            guard let t = it.target, let a = it.action else { return false }
+            return !t.responds(to: a)
+        }.map { $0.title }
+        let conDestino = items.values.filter { $0.target != nil && $0.action != nil }.count
+        check("atajos: las 8 acciones propias del menú tienen destino (la comprobación no pasa en vacío)", conDestino == 8, "con destino: \(conDestino)")
+        check("atajos: cada acción propia del menú tiene quien la atienda", sinAtender.isEmpty && conDestino == 8, "sin atender: \(sinAtender)")
+    }
+
+    // Sesión persistente compartida entre paneles e instancias (tarea 5.1). Que la sesión sobreviva de verdad al cerrar la valida una persona (5.2)
+    func checkSession() {
+        let a = makePaneConfiguration(persistent: true).websiteDataStore, b = makePaneConfiguration(persistent: true).websiteDataStore
+        check("sesión: los paneles de la aplicación usan el almacén de datos persistente", a.isPersistent && b.isPersistent)
+        check("sesión: dos paneles comparten el mismo almacén (y por tanto la sesión)", a === b && a === WKWebsiteDataStore.default())
+        check("sesión: la autoprueba usa un almacén no persistente y no toca la sesión", !makePaneConfiguration(persistent: false).websiteDataStore.isPersistent)
+    }
+
+    // Recargar solo el panel con foco (tarea 5.1)
+    func checkReload() async {
+        let grid = PaneGrid(factory: { Pane(frame: .zero, configuration: makePaneConfiguration(persistent: false)) })
+        grid.addPane()
+        let host = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1284, height: 722), styleMask: [.borderless], backing: .buffered, defer: false)
+        host.alphaValue = 0
+        host.ignoresMouseEvents = true
+        host.contentView = grid
+        host.orderFrontRegardless()
+        grid.setFrameSize(NSSize(width: 1284, height: 722))
+        guard let a = grid.panes[0] as? Pane, let b = grid.panes[1] as? Pane else { check("recargar: los paneles son de la clase Pane", false); return }
+        do { try await load(a, "media.html"); try await load(b, "media.html") } catch { check("recargar: cargan las páginas de prueba", false, "\(error)"); return }
+        _ = await paneJS(a, "(window.__marca = 1, 1)")
+        _ = await paneJS(b, "(window.__marca = 1, 1)")
+        grid.setFocus(0)
+        await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+            a.onFinish = { a.onFinish = nil; c.resume() }
+            grid.reloadFocused()
+        }
+        let ma = await paneJS(a, "window.__marca"), mb = await paneJS(b, "window.__marca")
+        check("recargar: el panel con foco se recarga", ma == "undefined", "marca: \(ma)")
+        check("recargar: los demás paneles no se recargan", mb == "1", "marca: \(mb)")
+    }
+
+    // Diagnóstico opcional y sin datos personales (tarea 5.1)
+    func checkDebug() async {
+        let seguro = debugSafeLocation(URL(string: "https://www.primevideo.com/detail/ABC123?token=SECRETO&email=ana%40example.com#sesion"))
+        check("debug: de una dirección solo se registran servidor y ruta", seguro == "www.primevideo.com/detail/ABC123", "registrado: \(seguro)")
+        check("debug: una dirección data: no se registra", debugSafeLocation(URL(string: "data:text/html,<p>clave</p>")) == "data:")
+        check("debug: las rutas largas se recortan", debugSafeLocation(URL(string: "https://x.com/" + String(repeating: "a", count: 200))).count <= 81)
+        let pane = Pane(frame: .zero, configuration: makePaneConfiguration(persistent: false))
+        check("debug: el inspector web \(debugMode ? "está habilitado con --debug" : "queda deshabilitado sin --debug")", pane.isInspectable == debugMode)
+        do { try await load(pane, "form.html") } catch { check("debug: carga la página con campos", false, "\(error)"); return }
+        await settle()
+        if !debugMode {
+            check("debug: sin --debug no se escribe ningún registro", DebugLog.shared.linesWritten == 0, "líneas escritas: \(DebugLog.shared.linesWritten)")
+            return
+        }
+        let log = (try? String(contentsOfFile: DebugLog.shared.path, encoding: .utf8)) ?? ""
+        check("debug: con --debug se escribe debug.log con eventos de audio", log.contains("audio: el foco pasó") && log.contains("silenciado"))
+        check("debug: el registro anota que el reproductor reactivó el sonido", log.contains("reactivó el sonido"))
+        check("debug: el registro trae los eventos de cada panel (carga y tamaño)", log.contains("carga ") && log.contains("tamaño"))
+        let prohibido = ["secreto-123", "ana@example.com", "token=", "SECRETO"]
+        let hallado = prohibido.filter { log.contains($0) }
+        check("debug: el registro no contiene el contenido de los campos ni datos personales", hallado.isEmpty, "contiene: \(hallado)")
+    }
+
     // Un clic sintético en el centro de un panel, entregado directamente a su vista
     func click(_ pane: Pane, in window: NSWindow) {
         let p = pane.convert(NSPoint(x: pane.bounds.midX, y: pane.bounds.midY), to: nil)
@@ -591,9 +754,8 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         check("clic: con un solo panel el clic llega a la página", enU == 1, "eventos recibidos: \(enU)")
     }
 
-    // Uno y dos paneles de 16:9 con hueco de 8 px, y segundo panel a demanda (tarea 4.1)
+    // Uno y dos paneles de 16:9 sin hueco, y segundo panel a demanda (tarea 4.1)
     func checkPanes() {
-        let gap = PaneGrid.gap
         func close(_ a: CGFloat, _ b: CGFloat) -> Bool { abs(a - b) < 0.01 }
 
         // Un panel: llena la ventana 16:9
@@ -601,14 +763,15 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         one.setFrameSize(NSSize(width: 1280, height: 720))
         check("paneles: un panel mide el ancho de la ventana por 9/16", one.count == 1 && one.panes[0].frame.size == NSSize(width: 1280, height: 720), "\(one.panes[0].frame)")
 
-        // Dos paneles: medidas y hueco para varios anchos de ventana
-        for width in [2568.0, 5120.0] {
+        // Dos paneles: medidas, sin hueco y a altura completa, para varios anchos de ventana
+        for width in [2560.0, 5120.0] {
             let g = PaneGrid(factory: { NSView() })
             g.addPane()
             g.setFrameSize(NSSize(width: width, height: width * 9 / 32))
-            let a = g.panes[0].frame, b = g.panes[1].frame, pw = (width - gap) / 2
-            check("paneles: con \(Int(width)) px cada panel mide (ancho − 8) / 2", close(a.width, pw) && close(b.width, pw), "\(a.width) y \(b.width) frente a \(pw)")
-            check("paneles: con \(Int(width)) px el hueco entre ellos es de 8 px", close(b.minX - a.maxX, gap), "hueco \(b.minX - a.maxX)")
+            let a = g.panes[0].frame, b = g.panes[1].frame, pw = width / 2, alto = width * 9 / 32
+            check("paneles: con \(Int(width)) px cada panel mide la mitad del ancho", close(a.width, pw) && close(b.width, pw), "\(a.width) y \(b.width) frente a \(pw)")
+            check("paneles: con \(Int(width)) px no hay hueco entre ellos", close(b.minX - a.maxX, 0), "separación \(b.minX - a.maxX)")
+            check("paneles: con \(Int(width)) px cada panel mide la altura completa de la ventana", close(a.height, alto) && close(b.height, alto) && close(a.minY, 0) && close(b.minY, 0), "alturas \(a.height) y \(b.height) frente a \(alto)")
             check("paneles: con \(Int(width)) px cada panel mide 16:9", abs(a.width / a.height - 16.0 / 9.0) < 0.0001 && abs(b.width / b.height - 16.0 / 9.0) < 0.0001,
                   "proporciones \(a.width / a.height) y \(b.width / b.height)")
         }
@@ -628,8 +791,9 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         w.setFrame(target, display: false)
         check("paneles: al abrir el segundo, el primero conserva su tamaño", g.panes[0].frame.size == antes && g.count == 2,
               "antes \(antes), después \(g.panes[0].frame.size)")
-        check("paneles: al abrir el segundo, la ventana pasa a 32:9 y conserva su esquina superior izquierda",
-              abs(target.width / target.height - 32.0 / 9.0) < 0.0001 && close(target.minX, 100) && close(target.maxY, 1620))
+        check("paneles: al abrir el segundo, la ventana pasa a 32:9 y mide exactamente el doble",
+              abs(target.width / target.height - 32.0 / 9.0) < 0.0001 && close(target.width, 2560) && close(target.height, 720), "\(target.size)")
+        check("paneles: al abrir el segundo, la ventana conserva su esquina superior izquierda", close(target.minX, 100) && close(target.maxY, 1620))
         let angosto = windowFrame(forPanes: 2, from: NSRect(x: 0, y: 0, width: 1600, height: 900), maxWidth: 2000)
         check("paneles: si no cabe el doble, la ventana se limita al ancho de la pantalla y sigue siendo 32:9",
               angosto.width <= 2000 + 0.01 && abs(angosto.width / angosto.height - 32.0 / 9.0) < 0.0001, "ancho \(angosto.width)")
@@ -646,7 +810,7 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         }
         check("paneles: al volver a un panel el segundo sale de la ventana", quitado)
         check("paneles: al volver a un panel el segundo se libera por completo", segundo == nil)
-        let vuelta = windowFrame(forPanes: 1, from: NSRect(x: 0, y: 0, width: 2568, height: 722.25), maxWidth: 5120)
+        let vuelta = windowFrame(forPanes: 1, from: NSRect(x: 0, y: 0, width: 2560, height: 720), maxWidth: 5120)
         check("paneles: al volver a un panel la ventana mide lo que medía cada panel (1280×720)", close(vuelta.width, 1280) && close(vuelta.height, 720), "\(vuelta.size)")
     }
 
@@ -675,10 +839,14 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         checkPanes()
         await checkAudio()
         await checkFocusClick()
+        checkShortcuts()
+        checkSession()
+        await checkReload()
+        await checkDebug()
         print("")
         print("Comprobaciones: \(passed) pasaron, \(failed) fallaron.")
-        print("Lo valida una persona: los paneles con un partido reproduciéndose, que el primero no se refresque y que el hueco se vea bien (4.2),")
-        print("y que con dos partidos de Prime Video el panel sin foco no se escuche en ningún momento (4.4).")
+        print("Lo valida una persona: la sesión al reabrir, la segunda instancia y pegar una contraseña (5.2),")
+        print("y el uso completo con dos partidos de Prime Video (6.3).")
         print("Aviso: la autoprueba no probó Prime Video; la reproducción y la apariencia requieren validación humana.")
         fflush(stdout)
         exit(failed == 0 && passed > 0 ? 0 : 1)
