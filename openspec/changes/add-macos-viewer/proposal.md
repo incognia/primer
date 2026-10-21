@@ -22,7 +22,7 @@ Fuera del alcance: emular o sobrescribir la pantalla completa, versiones para Wi
 ### New Capabilities
 
 - `window-chrome`: ventana sin bordes, movimiento, proporción fija, rellenar y centrar, y siempre encima.
-- `panes`: uno o dos paneles, hueco entre ellos, segundo panel a demanda y audio por foco.
+- `panes`: uno o dos paneles, hueco entre ellos, segundo panel a demanda, audio por foco y un clic que solo da el foco.
 - `playback`: qué carga la aplicación, que el reproductor llena la ventana o el panel por sí mismo, y las prohibiciones sobre el DRM y los límites de la cuenta.
 - `session`: sesión persistente, sin contraseñas y varias instancias.
 - `shortcuts`: atajos de teclado y edición de texto.

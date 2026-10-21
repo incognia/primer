@@ -70,6 +70,25 @@ Con dos paneles, la aplicación SHALL dejar sonar solo el panel con foco y SHALL
 - **WHEN** hay dos paneles reproduciendo partidos distintos en una ventana 32:9
 - **THEN** se escucha solo el partido del panel con foco
 
+### Requirement: El clic que da el foco no llega al reproductor
+
+Con dos paneles, un clic en el panel sin foco SHALL limitarse a pasarle el foco y el audio, y SHALL NOT entregarse a la página, de modo que no pause ni reanude el video. Desde el siguiente clic, el panel SHALL comportarse como el reproductor lo haga.
+
+#### Scenario: Clic en el panel sin foco
+
+- **WHEN** el usuario hace clic en el video del panel sin foco
+- **THEN** el panel recibe el foco y el audio, y el video no se pausa ni se reanuda
+
+#### Scenario: Clic en el panel con foco
+
+- **WHEN** el usuario hace clic en el video del panel que ya tiene el foco
+- **THEN** el clic llega al reproductor y este responde como lo haga normalmente
+
+#### Scenario: Un solo panel
+
+- **WHEN** hay un solo panel abierto
+- **THEN** todos los clics llegan al reproductor
+
 ### Requirement: Cambio de panel con foco
 
 La aplicación SHALL permitir pasar el foco y el audio al siguiente panel con un atajo de teclado.

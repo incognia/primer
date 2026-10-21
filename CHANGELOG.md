@@ -6,6 +6,9 @@
 
 ## [2026-10-20] - Arranque del repositorio
 
+- docs: se actualizan en `add-macos-viewer` la propuesta, el diseño, la especificación de `panes` y las tareas: se agrega el requisito del clic que solo da el foco, se decide el guardián de audio en JavaScript, se registran las mediciones y validaciones de las tareas 2.3 a 4.4 (ventana, paneles, audio por foco) y se marcan como hechas las tareas 2.3, 3.1 a 3.4, 4.1 y 4.3
+- feat: se amplía `macos/Primer.swift` con la ventana sin bordes (franja de arrastre, ⌥ + arrastrar, doble clic, proporción 16:9, rellenar y centrar, siempre encima), uno y dos paneles con hueco de 8 px y segundo panel a demanda, audio por foco con guardián de JavaScript, clic que solo da el foco al panel sin foco, y la autoprueba `--selftest` sin red ni cuenta
+- test: las páginas de prueba `media.html` y `unmutes.html` ahora reproducen con volumen 0 para que la autoprueba no suene, y cuentan los eventos `mousedown` que llegan a la página mediante `mouseDowns()`
 - test: se agregan las páginas de prueba de medios `shared/fixtures/media.html` (elemento `video` con una pista de audio breve) y `shared/fixtures/unmutes.html` (reactiva el audio de sus medios de forma periódica), y se marcan como hechas las tareas 2.1 y 2.2 en `tasks.md`
 - refactor: se retiran el script `shared/fill-fullscreen.js` y las tres páginas de prueba de pantalla completa (`player.html`, `rewrites-classes.html` y `nested.html`), que ya no hacen falta, y se quita de `.gitignore` la línea de la copia del script en el paquete
 - docs: se registra en `design.md` el resultado de la tarea 1.4 (el botón de pantalla completa del reproductor abre otro escritorio en pantalla completa y Esc regresa a la ventana de Primer, sin intervención de Primer), se marca como hecha en `tasks.md` y se actualiza la pregunta abierta sobre desactivar la pantalla completa del sistema con dos paneles
