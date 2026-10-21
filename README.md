@@ -1,10 +1,10 @@
 # Primer
 
-*Última modificación: 20 de octubre de 2026, 20:09 (CST)*
+*Última modificación: 20 de octubre de 2026, 22:00 (CST)*
 
 Visor mínimo de los canales deportivos de Prime Video (hoy NBA League Pass; MLB.TV más adelante): abre el sitio oficial en una ventana sin bordes, con uno o dos paneles, para ver dos partidos a la vez en una ventana 32:9 con el audio del panel sin foco silenciado.
 
-> **Estado:** la versión de macOS está construida y casi toda validada por su autor. Falta la validación final de la sesión al reabrir y del uso completo con dos paneles. El plan y su avance están en `openspec/changes/add-macos-viewer/`.
+> **Estado:** la versión de macOS está construida y validada por su autor: ventana, paneles, audio por foco, sesión y uso completo con dos paneles. El plan, sus decisiones y el registro de lo que se validó están archivados en `openspec/changes/archive/2026-10-20-add-macos-viewer/`.
 
 Primer **no es un producto de Amazon, Prime Video, la NBA ni la MLB**. Consulta `NOTICE.md`.
 

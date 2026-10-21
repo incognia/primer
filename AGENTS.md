@@ -1,6 +1,6 @@
 # Guía para agentes
 
-*Última modificación: 20 de octubre de 2026, 19:00 (CST)*
+*Última modificación: 20 de octubre de 2026, 22:02 (CST)*
 
 Este archivo es para un agente de IA que trabaja en este repositorio. El autor mantiene un repositorio de reglas personales (`rules`) con las *skills* de trabajo (`/commit`, `/changelogger`, `/git-init`, `/licensing`) y sus procedimientos. Está presente en `~/rules`, así que **si existe, manda sobre el resumen de este archivo**; este archivo recoge lo esencial por si no está.
 
@@ -22,7 +22,7 @@ openspec/  especificaciones y cambios (el plan de trabajo, ver abajo)
 
 ## Cómo se trabaja: OpenSpec
 
-El plan está en `openspec/`. Hoy hay un solo cambio activo, `add-macos-viewer`, que contiene las especificaciones del comportamiento esperado, el diseño y las tareas. Cuando se archive, sus especificaciones pasan a `openspec/specs/` y se vuelven el contrato del proyecto.
+El plan está en `openspec/`. Las especificaciones de `openspec/specs/` son el contrato del proyecto y describen el comportamiento de la versión de macOS. El cambio que las construyó, `add-macos-viewer`, está archivado en `openspec/changes/archive/2026-10-20-add-macos-viewer/`: su propuesta, su diseño con las decisiones y el registro de lo que se validó, y sus tareas. Hoy no hay cambios activos; uno nuevo se propone con `/opsx:propose`.
 
 Para trabajar un cambio:
 
@@ -61,14 +61,15 @@ Hechos que vienen del autor:
 - NBA League Pass se contrata como canal dentro de Prime Video, y el autor planea contratar también MLB.TV por la misma vía. Por eso Primer se construye sobre Prime Video y no se ata a un solo deporte.
 - Dos paneles alcanzan: es una decisión del autor, basada en su lectura del calendario de la NBA, que este repositorio no ha verificado.
 - El resultado esperado: aplicación sin bordes con dos paneles en 32:9, el panel sin foco silenciado, y sin sobrescribir la pantalla completa.
-- Al reproducir, el reproductor de Prime Video llena la ventana por sí mismo. Lo observó el autor con un panel; falta confirmarlo con dos.
+- Al reproducir, el reproductor de Prime Video llena la ventana por sí mismo, y con dos paneles llena cada panel (confirmado por el autor).
+- La pantalla completa del reproductor funciona con dos paneles (confirmado por el autor), así que no se desactiva con `isElementFullscreenEnabled`.
 
 Hipótesis heredadas de DAZN, **sin verificar en Prime Video**:
 
 - Que cambiar el tamaño de la ventana refresca el reproductor, por lo que conviene abrir el segundo panel cambiando primero la ventana.
 - Que una captura de pantalla de un video con DRM sale en negro: no sirve para diagnosticar.
 
-Preguntas abiertas: están en la sección «Open Questions» de `openspec/changes/add-macos-viewer/design.md`.
+Preguntas abiertas: están en la sección «Open Questions» del diseño archivado (`openspec/changes/archive/2026-10-20-add-macos-viewer/design.md`). Siguen abiertas aunque el cambio esté archivado: quien abra un cambio nuevo debe traer a su diseño las que le afecten.
 
 ## Depuración
 
