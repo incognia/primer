@@ -1,14 +1,14 @@
 # Guía para agentes
 
-*Última modificación: 20 de octubre de 2026, 22:02 (CST)*
+*Última modificación: 20 de octubre de 2026, 22:23 (CST)*
 
 Este archivo es para un agente de IA que trabaja en este repositorio. El autor mantiene un repositorio de reglas personales (`rules`) con las *skills* de trabajo (`/commit`, `/changelogger`, `/git-init`, `/licensing`) y sus procedimientos. Está presente en `~/rules`, así que **si existe, manda sobre el resumen de este archivo**; este archivo recoge lo esencial por si no está.
 
 ## Qué es Primer
 
-Visor mínimo de los canales deportivos de Prime Video (hoy NBA League Pass; MLB.TV más adelante): abre el sitio oficial en una ventana sin bordes, con uno o dos paneles, para ver dos partidos a la vez en una ventana 32:9 con el audio del panel sin foco silenciado. La pantalla completa no se sobrescribe: al reproducir, el reproductor de Prime Video llena la ventana por sí mismo. Licencia GPLv3; aviso de marcas en `NOTICE.md`.
+Visor mínimo de los canales deportivos de Prime Video (hoy NBA League Pass; MLB.TV más adelante): abre el sitio oficial en una ventana sin bordes, con uno, dos o tres paneles, para ver varios partidos a la vez (dos en una ventana 32:9) con el audio del panel sin foco silenciado. La pantalla completa no se sobrescribe: al reproducir, el reproductor de Prime Video llena la ventana por sí mismo. Licencia GPLv3; aviso de marcas en `NOTICE.md`.
 
-La página de Prime Video **no trae *multiview* nativo**: los paneles de Primer son la forma de ver varios partidos a la vez. Un panel mide 16:9 y dos paneles forman una ventana 32:9.
+La página de Prime Video **no trae *multiview* nativo**: los paneles de Primer son la forma de ver varios partidos a la vez. Un panel mide 16:9; dos paneles forman una ventana 32:9 y tres, 48:9 (en horizontal; en vertical 16:18 y 16:27).
 
 Primer nació de DAZNer, otro proyecto del mismo autor. De allí se hereda la forma de trabajar y la estructura de las especificaciones. **Lo que se descubrió de DAZN es una hipótesis aquí, no un hecho**: nada se da por cierto en Prime Video hasta comprobarlo.
 
@@ -52,15 +52,15 @@ Reglas para las tareas [HITL]:
 - **No afirmar lo que no se ejecutó.** No se marca una tarea como hecha ni se dice que algo funciona si no se pudo compilar y probar. Si algo solo puede verificarse en otra máquina o por el humano, se deja pendiente y se dice quién lo prueba y dónde.
 - **Credenciales:** Primer nunca lee, guarda ni registra contraseñas. No escribas credenciales en archivos, registros ni *commits*. Las pruebas de la autoprueba no usan ninguna cuenta.
 - **Marcas:** no uses logotipos de Amazon, Prime Video, la NBA ni la MLB. El ícono del proyecto será propio.
-- **Cualquier cambio al silenciado del audio** exige repetir su verificación: la autoprueba y la validación del humano con dos partidos.
+- **Cualquier cambio al silenciado del audio** exige repetir su verificación: la autoprueba y la validación del humano con dos partidos (con tres paneles también, validado el 2026-10-20 en `add-third-pane-and-layouts`).
 
 ## Qué se sabe y qué no
 
 Hechos que vienen del autor:
 
 - NBA League Pass se contrata como canal dentro de Prime Video, y el autor planea contratar también MLB.TV por la misma vía. Por eso Primer se construye sobre Prime Video y no se ata a un solo deporte.
-- Dos paneles alcanzan: es una decisión del autor, basada en su lectura del calendario de la NBA, que este repositorio no ha verificado.
-- El resultado esperado: aplicación sin bordes con dos paneles en 32:9, el panel sin foco silenciado, y sin sobrescribir la pantalla completa.
+- Dos paneles alcanzaban: era una decisión del autor, basada en su lectura del calendario de la NBA, que este repositorio no ha verificado. El 2026-10-20 el autor pidió un tercer panel y las disposiciones horizontal y vertical (`add-third-pane-and-layouts`); que la cuenta admita tres reproducciones a la vez no está verificado.
+- El resultado esperado: aplicación sin bordes con hasta tres paneles (dos en 32:9), el panel sin foco silenciado, y sin sobrescribir la pantalla completa.
 - Al reproducir, el reproductor de Prime Video llena la ventana por sí mismo, y con dos paneles llena cada panel (confirmado por el autor).
 - La pantalla completa del reproductor funciona con dos paneles (confirmado por el autor), así que no se desactiva con `isElementFullscreenEnabled`.
 

@@ -1,18 +1,18 @@
 # Primer
 
-*Última modificación: 20 de octubre de 2026, 22:00 (CST)*
+*Última modificación: 20 de octubre de 2026, 22:23 (CST)*
 
-Visor mínimo de los canales deportivos de Prime Video (hoy NBA League Pass; MLB.TV más adelante): abre el sitio oficial en una ventana sin bordes, con uno o dos paneles, para ver dos partidos a la vez en una ventana 32:9 con el audio del panel sin foco silenciado.
+Visor mínimo de los canales deportivos de Prime Video (hoy NBA League Pass; MLB.TV más adelante): abre el sitio oficial en una ventana sin bordes, con uno, dos o tres paneles, para ver varios partidos a la vez (dos en una ventana 32:9) con el audio del panel sin foco silenciado.
 
-> **Estado:** la versión de macOS está construida y validada por su autor: ventana, paneles, audio por foco, sesión y uso completo con dos paneles. El plan, sus decisiones y el registro de lo que se validó están archivados en `openspec/changes/archive/2026-10-20-add-macos-viewer/`.
+> **Estado:** la versión de macOS está construida y validada por su autor: ventana, paneles, audio por foco, sesión y uso completo con dos paneles; el tercer panel y las disposiciones están implementados y pasan la autoprueba, pendientes de validación con Prime Video. El plan, sus decisiones y el registro de lo que se validó están archivados en `openspec/changes/archive/2026-10-20-add-macos-viewer/`.
 
 Primer **no es un producto de Amazon, Prime Video, la NBA ni la MLB**. Consulta `NOTICE.md`.
 
 ## Qué hace
 
-- **Sin bordes:** ventana arrastrable, con proporción fija: 16:9 con un panel y 32:9 con dos. Así el video no deja bandas negras.
-- **Paneles:** Prime Video no trae vista múltiple, así que Primer ofrece hasta dos paneles independientes, pegados, para ver dos partidos a la vez. Los dos comparten la sesión.
-- **Audio por foco:** con dos paneles solo suena el que tiene el foco; el otro queda silenciado, aunque su reproductor intente reactivar el sonido. Un silencio puesto a mano desde el reproductor se respeta.
+- **Sin bordes:** ventana arrastrable, con proporción fija: 16:9 con un panel, 32:9 con dos y 48:9 con tres (en horizontal); 16:18 y 16:27 en vertical. Así el video no deja bandas negras.
+- **Paneles:** Prime Video no trae vista múltiple, así que Primer ofrece hasta tres paneles independientes, pegados, para ver varios partidos a la vez, uno junto al otro (horizontal, la disposición al abrir) o uno sobre otro (vertical). Todos comparten la sesión, y la disposición no se recuerda entre aperturas.
+- **Audio por foco:** con dos o tres paneles solo suena el que tiene el foco; los demás quedan silenciados, aunque su reproductor intente reactivar el sonido. Un silencio puesto a mano desde el reproductor se respeta.
 - **El clic que da el foco no pausa:** un clic en el panel sin foco solo le pasa el foco y el audio, y no llega a la página.
 - **Pantalla completa:** Primer no la toca. El reproductor de Prime Video llena por sí mismo la ventana o el panel, y su botón de pantalla completa usa la del sistema (Esc regresa).
 
@@ -43,7 +43,8 @@ open -n macos/Primer.app
 
 | Atajo | Acción |
 |---|---|
-| ⌘1 · ⌘2 | Uno o dos paneles |
+| ⌘1 · ⌘2 · ⌘3 | Uno, dos o tres paneles |
+| ⌥⌘H · ⌥⌘V | Paneles uno junto al otro (horizontal) · uno sobre otro (vertical) |
 | ⌘\` | Pasar el foco y el audio al otro panel |
 | ⌘L | Abrir una dirección en el panel con foco |
 | ⌘R | Recargar el panel con foco |
