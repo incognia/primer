@@ -209,11 +209,19 @@ final class Pane: WKWebView, WKNavigationDelegate {
     }
 }
 
-// Uno o dos paneles de 16:9. Con uno, el panel llena la ventana. Con dos, quedan pegados, sin hueco: cada uno mide la mitad del
-// ancho de la ventana y toda su altura (32:9 se reparte exacto en dos 16:9). El segundo panel existe solo mientras se pide.
+// Disposición de los paneles: uno junto al otro (horizontal) o uno sobre otro (vertical)
+enum PaneLayout { case horizontal, vertical }
+
+// Hasta tres paneles de 16:9. Con uno, el panel llena la ventana. Con dos o tres, quedan pegados, sin hueco, a lo largo del eje de la
+// disposición: en horizontal cada uno mide 1/n del ancho y toda la altura, en vertical el ancho completo y 1/n de la altura.
+// Los paneles adicionales existen solo mientras se piden.
+let maxPanes = 3
+
 final class PaneGrid: NSView {
     let factory: () -> NSView
     private(set) var panes: [NSView] = []
+    // Cambiar la disposición no recoloca los paneles: lo hace layoutPanes() cuando la ventana ya tiene su marco nuevo
+    var layout: PaneLayout = .horizontal
 
     init(factory: @escaping () -> NSView) {
         self.factory = factory
@@ -227,6 +235,7 @@ final class PaneGrid: NSView {
     private(set) var focused = 0
 
     func addPane() {
+        guard panes.count < maxPanes else { return }
         let p = factory()
         panes.append(p)
         addSubview(p)
@@ -280,24 +289,40 @@ final class PaneGrid: NSView {
         layoutPanes()
     }
 
+    // En AppKit el origen está abajo: en vertical el primer panel se coloca en la franja de arriba
     func layoutPanes() {
+        let n = CGFloat(panes.count)
         if panes.count == 1 { panes[0].frame = bounds; return }
-        let pw = bounds.width / 2
-        panes[0].frame = NSRect(x: 0, y: 0, width: pw, height: bounds.height)
-        panes[1].frame = NSRect(x: pw, y: 0, width: pw, height: bounds.height)
+        for (i, p) in panes.enumerated() {
+            switch layout {
+            case .horizontal:
+                p.frame = NSRect(x: bounds.width / n * CGFloat(i), y: 0, width: bounds.width / n, height: bounds.height)
+            case .vertical:
+                p.frame = NSRect(x: 0, y: bounds.height - bounds.height / n * CGFloat(i + 1), width: bounds.width, height: bounds.height / n)
+            }
+        }
     }
 }
 
-// Proporción de la ventana: 16:9 con un panel y 32:9 con dos (dos paneles de 16:9 lado a lado)
-func windowAspect(forPanes n: Int) -> NSSize { NSSize(width: 16 * CGFloat(n), height: 9) }
+// Proporción de la ventana: 16n:9 en horizontal y 16:9n en vertical (n paneles de 16:9 uno junto al otro o uno sobre otro)
+func windowAspect(forPanes n: Int, layout: PaneLayout) -> NSSize {
+    layout == .horizontal ? NSSize(width: 16 * CGFloat(n), height: 9) : NSSize(width: 16, height: 9 * CGFloat(n))
+}
 
-// Marco de la ventana al pasar a n paneles. Con dos, mide exactamente el doble, de modo que el panel que ya estaba abierto
-// conserva su tamaño y no se refresca (cambiar el tamaño de la ventana rehace el reproductor); se limita al ancho de la pantalla.
-// Al volver a uno mide lo que medía cada panel. Conserva la esquina superior izquierda.
-func windowFrame(forPanes n: Int, from old: NSRect, maxWidth: CGFloat) -> NSRect {
-    let w: CGFloat = n == 2 ? min(old.width * 2, maxWidth) : max(old.width / 2, 320)
-    let h = w * 9 / (16 * CGFloat(n))
-    return NSRect(x: old.minX, y: old.maxY - h, width: w, height: h)
+// Marco de la ventana al pasar a n paneles y a la disposición `layout`. Se deduce el tamaño de un panel del marco actual y el marco
+// nuevo repite ese panel n veces a lo largo del nuevo eje, de modo que los paneles que ya estaban abiertos conservan su tamaño y no se
+// refrescan (cambiar el tamaño de la ventana rehace el reproductor). Si no cabe en `area` se reduce con la misma proporción, y si se
+// sale se desplaza lo mínimo. Conserva la esquina superior izquierda y nunca baja de 320 px de ancho.
+func windowFrame(forPanes n: Int, layout: PaneLayout, from old: NSRect, fromPanes oldN: Int, fromLayout oldLayout: PaneLayout, in area: NSRect) -> NSRect {
+    let oldCount = CGFloat(max(oldN, 1)), count = CGFloat(n)
+    let pane = oldLayout == .horizontal ? NSSize(width: old.width / oldCount, height: old.height) : NSSize(width: old.width, height: old.height / oldCount)
+    var size = layout == .horizontal ? NSSize(width: pane.width * count, height: pane.height) : NSSize(width: pane.width, height: pane.height * count)
+    let fit = min(1, area.width / size.width, area.height / size.height)
+    size = NSSize(width: size.width * fit, height: size.height * fit)
+    if size.width < 320 { let up = 320 / size.width; size = NSSize(width: 320, height: size.height * up) }
+    let x = min(max(old.minX, area.minX), max(area.maxX - size.width, area.minX))
+    let top = max(min(old.maxY, area.maxY), area.minY + size.height)
+    return NSRect(x: x, y: top - size.height, width: size.width, height: size.height)
 }
 
 final class App: NSObject, NSApplicationDelegate, WKUIDelegate {
@@ -314,17 +339,35 @@ final class App: NSObject, NSApplicationDelegate, WKUIDelegate {
         return p
     }
 
-    // Uno o dos paneles: primero se crea o se quita el panel y luego cambia la ventana, para que el primer panel no cambie de tamaño
+    var usableArea: NSRect { (window.screen ?? NSScreen.main)?.visibleFrame ?? window.frame }
+
+    // De uno a tres paneles: primero se crean o se quitan los paneles y luego cambia la ventana, una sola vez, para que los paneles
+    // que ya estaban abiertos no cambien de tamaño
     func setPanes(_ n: Int) {
-        guard n == 1 || n == 2, n != grid.count else { return }
-        let maxW = (window.screen ?? NSScreen.main)?.visibleFrame.width ?? window.frame.width
-        let target = windowFrame(forPanes: n, from: window.frame, maxWidth: maxW)
-        if n == 2 { grid.addPane() } else { grid.removeLastPane() }
-        window.aspectRatio = windowAspect(forPanes: n)
+        guard (1...maxPanes).contains(n), n != grid.count else { return }
+        let target = windowFrame(forPanes: n, layout: grid.layout, from: window.frame, fromPanes: grid.count, fromLayout: grid.layout, in: usableArea)
+        while grid.count < n { grid.addPane() }
+        while grid.count > n { grid.removeLastPane() }
+        window.aspectRatio = windowAspect(forPanes: n, layout: grid.layout)
         window.setFrame(target, display: true, animate: false)
+        grid.layoutPanes()
+    }
+
+    // Horizontal o vertical: los mismos paneles en el mismo orden. Con un solo panel solo se recuerda para el siguiente que se abra
+    func setLayout(_ layout: PaneLayout) {
+        guard layout != grid.layout else { return }
+        let target = windowFrame(forPanes: grid.count, layout: layout, from: window.frame, fromPanes: grid.count, fromLayout: grid.layout, in: usableArea)
+        grid.layout = layout
+        guard grid.count > 1 else { return }
+        window.aspectRatio = windowAspect(forPanes: grid.count, layout: layout)
+        window.setFrame(target, display: true, animate: false)
+        grid.layoutPanes()
     }
     @objc func onePane() { setPanes(1) }
     @objc func twoPanes() { setPanes(2) }
+    @objc func threePanes() { setPanes(3) }
+    @objc func horizontalLayout() { setLayout(.horizontal) }
+    @objc func verticalLayout() { setLayout(.vertical) }
     @objc func nextPane() { grid.nextPane() }
     @objc func reload() { grid.reloadFocused() }
     @objc func goHome() { grid.openAddress(homeURL) }
@@ -387,13 +430,15 @@ final class App: NSObject, NSApplicationDelegate, WKUIDelegate {
 }
 
 // Menú de la aplicación, con los atajos de ⌘: Salir (Q); Ventana: rellenar y centrar (F), siempre encima (T) y cerrar (W);
-// Paneles: 1 y 2 paneles, siguiente panel (`), abrir dirección (L), recargar (R) e inicio de Prime Video (H);
+// Paneles: 1, 2 y 3 paneles, disposición horizontal (⌥⌘H) y vertical (⌥⌘V), siguiente panel (`), abrir dirección (L), recargar (R)
+// e inicio de Prime Video (H);
 // Edición: deshacer, cortar, copiar, pegar y seleccionar todo. Recargar, inicio y abrir dirección actúan sobre el panel con foco.
 @MainActor
 func makeMainMenu(target: App) -> NSMenu {
     let main = NSMenu()
-    func add(_ menu: NSMenu, _ title: String, _ action: Selector, _ key: String, targeted: Bool = true) {
+    func add(_ menu: NSMenu, _ title: String, _ action: Selector, _ key: String, targeted: Bool = true, option: Bool = false) {
         let it = NSMenuItem(title: title, action: action, keyEquivalent: key)
+        if option { it.keyEquivalentModifierMask = [.command, .option] }
         if targeted { it.target = target }
         menu.addItem(it)
     }
@@ -414,6 +459,9 @@ func makeMainMenu(target: App) -> NSMenu {
     let panes = submenu("Paneles")
     add(panes, "1 panel", #selector(App.onePane), "1")
     add(panes, "2 paneles", #selector(App.twoPanes), "2")
+    add(panes, "3 paneles", #selector(App.threePanes), "3")
+    add(panes, "Disposición horizontal", #selector(App.horizontalLayout), "h", option: true)
+    add(panes, "Disposición vertical", #selector(App.verticalLayout), "v", option: true)
     add(panes, "Siguiente panel", #selector(App.nextPane), "`")
     add(panes, "Abrir dirección…", #selector(App.openAddress), "l")
     add(panes, "Recargar", #selector(App.reload), "r")
@@ -624,17 +672,24 @@ final class SelfTest: NSObject, WKNavigationDelegate {
     // Atajos del menú (tarea 5.1): los de la especificación existen con la tecla ⌘ y cada acción tiene quien la atienda
     func checkShortcuts() {
         var items: [String: NSMenuItem] = [:]
-        func walk(_ m: NSMenu) { for it in m.items { if !it.keyEquivalent.isEmpty { items[it.keyEquivalent] = it }; if let s = it.submenu { walk(s) } } }
+        // ⌥⌘H y ⌥⌘V comparten letra con ⌘H y ⌘V: la clave lleva el ⌥ cuando el atajo lo usa
+        func walk(_ m: NSMenu) {
+            for it in m.items {
+                if !it.keyEquivalent.isEmpty { items[(it.keyEquivalentModifierMask.contains(.option) ? "⌥" : "") + it.keyEquivalent] = it }
+                if let s = it.submenu { walk(s) }
+            }
+        }
         // El destino de un elemento de menú es una referencia débil: la App debe seguir viva mientras se revisa
         let objetivo = App()
         walk(makeMainMenu(target: objetivo))
         defer { withExtendedLifetime(objetivo) {} }
-        let esperados = [("1", "1 panel"), ("2", "2 paneles"), ("l", "Abrir dirección…"), ("r", "Recargar"), ("h", "Inicio de Prime Video"),
+        let esperados = [("1", "1 panel"), ("2", "2 paneles"), ("3", "3 paneles"),
+                         ("⌥h", "Disposición horizontal"), ("⌥v", "Disposición vertical"), ("l", "Abrir dirección…"), ("r", "Recargar"), ("h", "Inicio de Prime Video"),
                          ("`", "Siguiente panel"), ("t", "Siempre encima"), ("f", "Rellenar y centrar"), ("w", "Cerrar"), ("q", "Salir de Primer"),
                          ("z", "Deshacer"), ("x", "Cortar"), ("c", "Copiar"), ("v", "Pegar"), ("a", "Seleccionar todo")]
         for (key, title) in esperados {
             let it = items[key]
-            check("atajos: ⌘\(key) es «\(title)»", it?.title == title && it?.keyEquivalentModifierMask.contains(.command) == true,
+            check("atajos: \(key.hasPrefix("⌥") ? "⌥⌘" + key.dropFirst() : "⌘" + key) es «\(title)»", it?.title == title && it?.keyEquivalentModifierMask.contains(.command) == true,
                   "encontrado: \(it?.title ?? "nada")")
         }
         let sinAtender = items.values.filter { it in
@@ -642,8 +697,8 @@ final class SelfTest: NSObject, WKNavigationDelegate {
             return !t.responds(to: a)
         }.map { $0.title }
         let conDestino = items.values.filter { $0.target != nil && $0.action != nil }.count
-        check("atajos: las 8 acciones propias del menú tienen destino (la comprobación no pasa en vacío)", conDestino == 8, "con destino: \(conDestino)")
-        check("atajos: cada acción propia del menú tiene quien la atienda", sinAtender.isEmpty && conDestino == 8, "sin atender: \(sinAtender)")
+        check("atajos: las 11 acciones propias del menú tienen destino (la comprobación no pasa en vacío)", conDestino == 11, "con destino: \(conDestino)")
+        check("atajos: cada acción propia del menú tiene quien la atienda", sinAtender.isEmpty && conDestino == 11, "sin atender: \(sinAtender)")
     }
 
     // Sesión persistente compartida entre paneles e instancias (tarea 5.1). Que la sesión sobreviva de verdad al cerrar la valida una persona (5.2)
@@ -776,25 +831,30 @@ final class SelfTest: NSObject, WKNavigationDelegate {
                   "proporciones \(a.width / a.height) y \(b.width / b.height)")
         }
 
-        // La proporción de la ventana: 16:9 con uno y 32:9 con dos
+        // La proporción de la ventana: 16n:9 en horizontal y 16:9n en vertical
         check("paneles: la ventana mide 16:9 con un panel y 32:9 con dos",
-              windowAspect(forPanes: 1) == NSSize(width: 16, height: 9) && windowAspect(forPanes: 2) == NSSize(width: 32, height: 9))
+              windowAspect(forPanes: 1, layout: .horizontal) == NSSize(width: 16, height: 9) && windowAspect(forPanes: 2, layout: .horizontal) == NSSize(width: 32, height: 9))
+        check("paneles: la ventana mide 48:9 con tres paneles en horizontal", windowAspect(forPanes: 3, layout: .horizontal) == NSSize(width: 48, height: 9))
+        check("paneles: la ventana mide 16:18 con dos paneles y 16:27 con tres en vertical",
+              windowAspect(forPanes: 2, layout: .vertical) == NSSize(width: 16, height: 18) && windowAspect(forPanes: 3, layout: .vertical) == NSSize(width: 16, height: 27))
 
         // Segundo panel a demanda, con la ventana real: el primer panel conserva su tamaño
         let g = PaneGrid(factory: { NSView() })
         let w = makeChromeWindow(content: g)
         w.setFrame(NSRect(x: 100, y: 900, width: 1280, height: 720), display: false)
         let antes = g.panes[0].frame.size
-        let target = windowFrame(forPanes: 2, from: w.frame, maxWidth: 5120)
+        let amplia = NSRect(x: 0, y: 0, width: 5120, height: 3000)
+        let target = windowFrame(forPanes: 2, layout: .horizontal, from: w.frame, fromPanes: 1, fromLayout: .horizontal, in: amplia)
         g.addPane()
-        w.aspectRatio = windowAspect(forPanes: 2)
+        w.aspectRatio = windowAspect(forPanes: 2, layout: .horizontal)
         w.setFrame(target, display: false)
         check("paneles: al abrir el segundo, el primero conserva su tamaño", g.panes[0].frame.size == antes && g.count == 2,
               "antes \(antes), después \(g.panes[0].frame.size)")
         check("paneles: al abrir el segundo, la ventana pasa a 32:9 y mide exactamente el doble",
               abs(target.width / target.height - 32.0 / 9.0) < 0.0001 && close(target.width, 2560) && close(target.height, 720), "\(target.size)")
         check("paneles: al abrir el segundo, la ventana conserva su esquina superior izquierda", close(target.minX, 100) && close(target.maxY, 1620))
-        let angosto = windowFrame(forPanes: 2, from: NSRect(x: 0, y: 0, width: 1600, height: 900), maxWidth: 2000)
+        let angosto = windowFrame(forPanes: 2, layout: .horizontal, from: NSRect(x: 0, y: 0, width: 1600, height: 900), fromPanes: 1, fromLayout: .horizontal,
+                                  in: NSRect(x: 0, y: 0, width: 2000, height: 1400))
         check("paneles: si no cabe el doble, la ventana se limita al ancho de la pantalla y sigue siendo 32:9",
               angosto.width <= 2000 + 0.01 && abs(angosto.width / angosto.height - 32.0 / 9.0) < 0.0001, "ancho \(angosto.width)")
 
@@ -810,8 +870,140 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         }
         check("paneles: al volver a un panel el segundo sale de la ventana", quitado)
         check("paneles: al volver a un panel el segundo se libera por completo", segundo == nil)
-        let vuelta = windowFrame(forPanes: 1, from: NSRect(x: 0, y: 0, width: 2560, height: 720), maxWidth: 5120)
+        let vuelta = windowFrame(forPanes: 1, layout: .horizontal, from: NSRect(x: 0, y: 0, width: 2560, height: 720), fromPanes: 2, fromLayout: .horizontal, in: amplia)
         check("paneles: al volver a un panel la ventana mide lo que medía cada panel (1280×720)", close(vuelta.width, 1280) && close(vuelta.height, 720), "\(vuelta.size)")
+    }
+
+    // Tres paneles y las dos disposiciones (tareas 1.2, 2.2, 3.1 a 3.3): medidas, cambio de disposición, foco, clic y audio con paneles reales
+    func checkThreePanes() async {
+        func close(_ a: CGFloat, _ b: CGFloat) -> Bool { abs(a - b) < 0.01 }
+        let area = NSRect(x: 0, y: 0, width: 5120, height: 3000)
+
+        // Medidas sin hueco en las dos disposiciones, con vistas simples
+        for (layout, nombre) in [(PaneLayout.horizontal, "horizontal"), (.vertical, "vertical")] {
+            for n in [2, 3] {
+                let g = PaneGrid(factory: { NSView() })
+                for _ in 1..<n { g.addPane() }
+                g.layout = layout
+                let aspect = windowAspect(forPanes: n, layout: layout)
+                let ancho: CGFloat = layout == .horizontal ? 480 * CGFloat(n) : 480
+                g.setFrameSize(NSSize(width: ancho, height: ancho * aspect.height / aspect.width))
+                let f = g.panes.map { $0.frame }
+                let todos16x9 = f.allSatisfy { abs($0.width / $0.height - 16.0 / 9.0) < 0.0001 }
+                var sinHueco = true
+                for i in 1..<n {
+                    sinHueco = sinHueco && (layout == .horizontal ? close(f[i].minX - f[i - 1].maxX, 0) && close(f[i].minY, 0) : close(f[i - 1].minY - f[i].maxY, 0) && close(f[i].minX, 0))
+                }
+                let llena = layout == .horizontal ? f.allSatisfy { close($0.height, g.bounds.height) } : f.allSatisfy { close($0.width, g.bounds.width) }
+                let arriba = layout == .vertical ? close(f[0].maxY, g.bounds.height) && close(f[n - 1].minY, 0) : close(f[0].minX, 0) && close(f[n - 1].maxX, g.bounds.width)
+                check("paneles: \(n) paneles en \(nombre) miden 16:9, llenan la ventana y no dejan hueco", todos16x9 && sinHueco && llena && arriba, "marcos \(f)")
+            }
+        }
+        // Nunca más de tres
+        let tope = PaneGrid(factory: { NSView() })
+        for _ in 0..<5 { tope.addPane() }
+        check("paneles: no hay más de tres paneles", tope.count == 3 && maxPanes == 3, "paneles \(tope.count)")
+
+        // Marcos de la ventana: abrir paneles y cambiar de disposición conservan el tamaño de cada panel
+        let uno = NSRect(x: 100, y: 1500, width: 1280, height: 720)
+        let tres = windowFrame(forPanes: 3, layout: .horizontal, from: uno, fromPanes: 1, fromLayout: .horizontal, in: area)
+        check("ventana: de uno a tres paneles en horizontal mide el triple (48:9) y conserva la esquina superior izquierda",
+              close(tres.width, 3840) && close(tres.height, 720) && close(tres.minX, 100) && close(tres.maxY, 2220), "\(tres)")
+        let vertical = windowFrame(forPanes: 3, layout: .vertical, from: tres, fromPanes: 3, fromLayout: .horizontal, in: area)
+        check("ventana: de horizontal a vertical con tres paneles cada panel conserva su tamaño (16:27)",
+              close(vertical.width, 1280) && close(vertical.height, 2160) && close(vertical.maxY, tres.maxY), "\(vertical)")
+        let dosV = windowFrame(forPanes: 2, layout: .vertical, from: vertical, fromPanes: 3, fromLayout: .vertical, in: area)
+        check("ventana: de tres a dos paneles en vertical mide 16:18", close(dosV.width, 1280) && close(dosV.height, 1440), "\(dosV)")
+        // La pantalla no da: se reduce con la misma proporción y queda dentro
+        let normal = NSRect(x: 0, y: 25, width: 1920, height: 1055)
+        let ajustada = windowFrame(forPanes: 3, layout: .horizontal, from: NSRect(x: 50, y: 900, width: 1280, height: 720), fromPanes: 1, fromLayout: .horizontal, in: normal)
+        check("ventana: si tres paneles no caben se reduce conservando 48:9 y queda dentro de la pantalla",
+              abs(ajustada.width / ajustada.height - 48.0 / 9.0) < 0.0001 && ajustada.width <= normal.width + 0.01 && ajustada.minX >= normal.minX && ajustada.maxX <= normal.maxX + 0.01
+                && ajustada.minY >= normal.minY - 0.01 && ajustada.maxY <= normal.maxY + 0.01, "\(ajustada)")
+        let alta = windowFrame(forPanes: 3, layout: .vertical, from: NSRect(x: 50, y: 1000, width: 1280, height: 720), fromPanes: 1, fromLayout: .horizontal, in: normal)
+        check("ventana: si tres paneles en vertical no caben en alto se reduce conservando 16:27",
+              abs(alta.width / alta.height - 16.0 / 27.0) < 0.0001 && alta.height <= normal.height + 0.01 && alta.minY >= normal.minY - 0.01, "\(alta)")
+        // Rellenar y centrar usa la proporción vigente en las dos disposiciones
+        let rh = fillAndCenterRect(aspect: windowAspect(forPanes: 3, layout: .horizontal), in: normal)
+        let rv = fillAndCenterRect(aspect: windowAspect(forPanes: 3, layout: .vertical), in: normal)
+        check("rellenar: con tres paneles conserva 48:9 en horizontal y 16:27 en vertical y cabe en el área",
+              abs(rh.width / rh.height - 48.0 / 9.0) < 0.0001 && abs(rv.width / rv.height - 16.0 / 27.0) < 0.0001
+                && rh.width <= normal.width + 0.01 && rv.height <= normal.height + 0.01, "\(rh) y \(rv)")
+
+        // Con paneles reales: foco, siguiente panel, clic y audio con tres paneles, y cambio de disposición
+        let g = PaneGrid(factory: { Pane(frame: .zero, configuration: makePaneConfiguration(persistent: false)) })
+        g.addPane(); g.addPane()
+        let host = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1920, height: 360), styleMask: [.borderless], backing: .buffered, defer: false)
+        host.alphaValue = 0
+        host.ignoresMouseEvents = true
+        host.contentView = g
+        host.orderFrontRegardless()
+        g.setFrameSize(NSSize(width: 1920, height: 360))
+        let panes = g.panes.compactMap { $0 as? Pane }
+        guard panes.count == 3 else { check("tres paneles: son de la clase Pane", false); return }
+        for p in panes {
+            do { try await load(p, "media.html") } catch { check("tres paneles: cargan las páginas de medios", false, "\(error)"); return }
+        }
+        await settle()
+        func suena(_ p: Pane) async -> Bool { await paneJS(p, "window.__fixture.noneMuted()") == "true" }
+        func callado(_ p: Pane) async -> Bool { await paneJS(p, "window.__fixture.allMuted()") == "true" }
+        func soloSuena(_ i: Int) async -> Bool {
+            for (j, p) in panes.enumerated() { if j == i ? !(await suena(p)) : !(await callado(p)) { return false } }
+            return true
+        }
+        for i in [0, 1, 2] {
+            g.setFocus(i); await settle()
+            let ok = await soloSuena(i)
+            check("tres paneles: con el foco en el panel \(i + 1) solo suena ese", ok)
+        }
+        // Siguiente panel recorre los tres y vuelve al primero
+        g.setFocus(0)
+        var recorrido: [Int] = []
+        for _ in 0..<3 { g.nextPane(); recorrido.append(g.focused) }
+        check("tres paneles: el siguiente panel recorre el segundo, el tercero y vuelve al primero", recorrido == [1, 2, 0], "recorrido \(recorrido)")
+        await settle()
+        // Un panel sin foco que reactiva el audio queda silenciado y el silencio manual no se revierte
+        g.setFocus(0)
+        do { try await load(panes[2], "unmutes.html") } catch { check("tres paneles: carga la página que reactiva el audio", false, "\(error)"); return }
+        await settle(1.6)
+        let intentos = Int(await paneJS(panes[2], "window.__fixture.unmuteAttempts()")) ?? 0
+        let tercerCallado = await callado(panes[2])
+        check("tres paneles: el tercer panel sin foco intentó reactivar el audio y sigue silenciado", intentos >= 1 && tercerCallado, "intentos \(intentos)")
+        g.setFocus(1)
+        _ = await paneJS(panes[1], "(window.__fixture.muteAll(), 1)")
+        g.setFocus(0); await settle(); g.setFocus(2); await settle(); g.setFocus(1); await settle()
+        let segundoCallado = await callado(panes[1])
+        check("tres paneles: un silencio puesto a mano no se revierte al pasar el foco por los tres", segundoCallado)
+        do { try await load(panes[2], "media.html") } catch { check("tres paneles: recarga la página de medios", false, "\(error)"); return }
+        await settle()
+        // Clic: el del panel sin foco solo da el foco
+        func eventos(_ p: Pane) async -> Int { Int(await paneJS(p, "window.__fixture.mouseDowns()")) ?? -1 }
+        g.setFocus(0)
+        click(panes[2], in: host); await settle()
+        let sinLlegar = await eventos(panes[2])
+        check("tres paneles: el clic en un panel sin foco le pasa el foco y no llega a la página", g.focused == 2 && sinLlegar == 0, "foco \(g.focused), eventos \(sinLlegar)")
+        click(panes[2], in: host); await settle()
+        let llegado = await eventos(panes[2])
+        check("tres paneles: el siguiente clic en ese panel sí llega a la página", llegado == 1, "eventos \(llegado)")
+
+        // Cambio a vertical con los mismos paneles: orden, foco, tamaño y audio
+        let tamanos = panes.map { $0.frame.size }
+        let enfocado = g.focused
+        host.setContentSize(NSSize(width: 640, height: 1080))
+        g.layout = .vertical
+        g.setFrameSize(NSSize(width: 640, height: 1080))
+        g.layoutPanes()
+        let f = panes.map { $0.frame }
+        check("tres paneles: al pasar a vertical quedan en el mismo orden, de arriba abajo, sin hueco",
+              f[0].maxY > f[1].maxY && f[1].maxY > f[2].maxY && close(f[0].minY - f[1].maxY, 0) && close(f[1].minY - f[2].maxY, 0) && close(f[0].maxY, 1080), "\(f)")
+        check("tres paneles: al pasar a vertical cada panel conserva su tamaño (640×360)", tamanos.allSatisfy { close($0.width, 640) && close($0.height, 360) } && f.allSatisfy { close($0.width, 640) && close($0.height, 360) }, "\(tamanos) y \(f)")
+        await settle()
+        let mismoSuena = await soloSuena(enfocado)
+        check("tres paneles: al pasar a vertical el foco sigue en el mismo panel y solo suena ese", g.focused == enfocado && mismoSuena)
+        if debugMode {
+            let log = (try? String(contentsOfFile: DebugLog.shared.path, encoding: .utf8)) ?? ""
+            check("debug: el registro trae los eventos del tercer panel", log.contains("panel 3:"))
+        }
     }
 
     func run() async {
@@ -839,6 +1031,7 @@ final class SelfTest: NSObject, WKNavigationDelegate {
         checkPanes()
         await checkAudio()
         await checkFocusClick()
+        await checkThreePanes()
         checkShortcuts()
         checkSession()
         await checkReload()
