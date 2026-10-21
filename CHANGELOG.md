@@ -4,6 +4,13 @@
 
 <!-- markdownlint-disable MD013 MD024 MD022 MD032 -->
 
+## [2026-10-21] - Proporciones de cine con un panel
+
+- docs: se actualizan `README.md` y `AGENTS.md` para describir ⌥⌘P (con un solo panel, la proporción de la ventana pasa en secuencia por 16:9, 1.85:1, 2.35:1, 2.39:1 y 2.40:1, y está deshabilitada con dos o tres paneles), y se anota en `AGENTS.md` como pendiente de revisión posterior que el reproductor se refrescó al pasar de la disposición horizontal a la vertical con paneles reproduciendo, sin que se sepa la causa
+- docs: se archiva el cambio `add-cinema-ratios` en `openspec/changes/archive/2026-10-21-add-cinema-ratios/` (propuesta, diseño, tareas y especificaciones), con la validación del mantenedor registrada en `design.md` (las proporciones coinciden con las de sus películas y el reproductor no se refresca; el 2.35:1 quedó sin probar con contenido real), pues sus especificaciones ya están en `openspec/specs/`
+- docs: se sincronizan con `openspec/specs/` las modificaciones de `add-cinema-ratios` a las especificaciones `window-chrome`, `panes`, `shortcuts` y `selftest` (⌥⌘P, proporciones de cine con un panel y regreso a 16:9 al abrir otro panel), que pasan a formar parte del contrato del proyecto
+- feat: se amplía `macos/Primer.swift` con las proporciones de cine para un solo panel (1.85:1, 2.35:1, 2.39:1 y 2.40:1 además de 16:9) que se recorren con ⌥⌘P, el elemento de menú «Proporción» deshabilitado con más de un panel, el regreso a 16:9 al abrir otro panel o volver a uno, y las comprobaciones de la autoprueba de proporciones y marcos
+
 ## [2026-10-20] - Arranque del repositorio
 
 - docs: se agrega el cambio `add-cinema-ratios` de OpenSpec con propuesta, diseño, tareas y modificaciones a las especificaciones `window-chrome`, `panes`, `shortcuts` y `selftest` (con un solo panel, ⌥⌘P cambia la proporción de la ventana de forma secuencial entre 16:9, 2.35:1 y 2.39:1, solo está habilitada con un panel y la ventana vuelve a 16:9 al abrir otro panel)

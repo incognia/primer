@@ -1,6 +1,6 @@
 # Guía para agentes
 
-*Última modificación: 20 de octubre de 2026, 22:46 (CST)*
+*Última modificación: 21 de octubre de 2026, 00:21 (CST)*
 
 Este archivo es para un agente de IA que trabaja en este repositorio. El autor mantiene un repositorio de reglas personales (`rules`) con las *skills* de trabajo (`/commit`, `/changelogger`, `/git-init`, `/licensing`) y sus procedimientos. Está presente en `~/rules`, así que **si existe, manda sobre el resumen de este archivo**; este archivo recoge lo esencial por si no está.
 
@@ -8,7 +8,7 @@ Este archivo es para un agente de IA que trabaja en este repositorio. El autor m
 
 Visor mínimo de los canales deportivos de Prime Video (hoy NBA League Pass; MLB.TV más adelante): abre el sitio oficial en una ventana sin bordes, con uno, dos o tres paneles, para ver varios partidos a la vez (dos en una ventana 32:9) con el audio del panel sin foco silenciado. La pantalla completa no se sobrescribe: al reproducir, el reproductor de Prime Video llena la ventana por sí mismo. Licencia GPLv3; aviso de marcas en `NOTICE.md`.
 
-La página de Prime Video **no trae *multiview* nativo**: los paneles de Primer son la forma de ver varios partidos a la vez. Un panel mide 16:9; dos paneles forman una ventana 32:9 y tres, 48:9 (en horizontal; en vertical 16:18 y 16:27).
+La página de Prime Video **no trae *multiview* nativo**: los paneles de Primer son la forma de ver varios partidos a la vez. Un panel mide 16:9 (con un solo panel, ⌥⌘P lo pasa a 1.85:1, 2.35:1, 2.39:1 y 2.40:1 y de vuelta); dos paneles forman una ventana 32:9 y tres, 48:9 (en horizontal; en vertical 16:18 y 16:27), siempre de paneles 16:9.
 
 Primer nació de DAZNer, otro proyecto del mismo autor. De allí se hereda la forma de trabajar y la estructura de las especificaciones. **Lo que se descubrió de DAZN es una hipótesis aquí, no un hecho**: nada se da por cierto en Prime Video hasta comprobarlo.
 
@@ -68,6 +68,8 @@ Hipótesis heredadas de DAZN, **sin verificar en Prime Video**:
 
 - Que cambiar el tamaño de la ventana refresca el reproductor, por lo que conviene abrir el segundo panel cambiando primero la ventana.
 - Que una captura de pantalla de un video con DRM sale en negro: no sirve para diagnosticar.
+
+Pendiente de revisión posterior (TODO, decidido por el autor el 2026-10-21): al pasar de la disposición horizontal a la vertical (⌥⌘V) con paneles reproduciendo, el reproductor se refrescó aunque cada panel conservaba su tamaño; lo observó el autor el 2026-10-20 al validar `add-third-pane-and-layouts`, y el registro archivado de ese cambio dice que el primer panel seguía sin interrupción, lo que no coincide. Cambiar solo el alto de la ventana con ⌥⌘P no refrescó. No se sabe qué lo causa, si afecta a uno o a los dos paneles ni si pasa también de vertical a horizontal; no se corrige por ahora.
 
 Preguntas abiertas: están en la sección «Open Questions» del diseño archivado (`openspec/changes/archive/2026-10-20-add-macos-viewer/design.md`). Siguen abiertas aunque el cambio esté archivado: quien abra un cambio nuevo debe traer a su diseño las que le afecten.
 
