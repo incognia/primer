@@ -6,6 +6,7 @@
 
 ## [2026-10-20] - Arranque del repositorio
 
+- docs: se agrega el cambio `add-third-pane-and-layouts` de OpenSpec con propuesta, diseño, tareas y modificaciones a las especificaciones `panes`, `window-chrome`, `shortcuts` y `selftest` (un tercer panel con ⌘3, disposiciones horizontal y vertical con ⌥⌘H y ⌥⌘V, y proporción de la ventana según el número de paneles y la disposición)
 - docs: se actualizan `README.md` (el estado pasa a «construida y validada») y `AGENTS.md` (las especificaciones de `openspec/specs/` son el contrato, ya no hay cambios activos y las preguntas abiertas están en el diseño archivado), y se registra como hecho confirmado por el autor que el reproductor llena cada panel y que su pantalla completa funciona con dos paneles
 - docs: se actualiza en `macos/Primer.swift` el comentario de `homeURL` para que apunte al diseño archivado de `add-macos-viewer`
 - docs: se archiva el cambio `add-macos-viewer` en `openspec/changes/archive/2026-10-20-add-macos-viewer/` (propuesta, diseño, tareas y especificaciones), pues sus especificaciones ya están en `openspec/specs/`
