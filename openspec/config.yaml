@@ -1,0 +1,47 @@
+schema: spec-driven
+
+# Contexto del proyecto: solo lo que un agente no puede deducir leyendo el código.
+context: |
+  Primer es un visor mínimo de los canales deportivos de Prime Video (hoy NBA League Pass; MLB.TV más adelante): abre el sitio oficial en
+  una ventana sin bordes, con uno o dos paneles, y hace que el botón de pantalla completa llene
+  la ventana o el panel en lugar de pasar a la pantalla completa del sistema. A diferencia de
+  DAZN, la página de Prime Video no trae multiview nativo: los paneles de Primer son la forma de
+  ver varios partidos a la vez. Un panel mide 16:9 y dos paneles forman una ventana 32:9.
+
+  Primer parte de DAZNer, otro proyecto del mismo autor. Se hereda la forma de trabajar, la
+  estructura de las especificaciones y, como punto de partida, el script de pantalla completa.
+  Nada de lo que se descubrió de DAZN se da por cierto en Prime Video hasta comprobarlo.
+
+  Idioma: los artefactos se escriben en español de México, salvo las palabras clave del
+  formato (SHALL, MUST, WHEN, THEN), que se dejan en inglés. Los mensajes de commit van en
+  inglés internacional (UK). Nunca se escribe en un commit que se edita el CHANGELOG.
+
+  Decisiones que no están en el código:
+  - Hoy solo se construye la versión de macOS: Swift sobre WKWebView, compilada con swiftc.
+  - La reproducción de Prime Video se comprueba antes de construir nada más; si falla, el
+    trabajo se detiene y el resultado se documenta.
+  - Está prohibido eludir DRM, controles de acceso o límites de reproducción, incluido el
+    límite de transmisiones simultáneas de la cuenta, y redistribuir módulos de DRM. Primer solo
+    abre el sitio oficial con una suscripción propia.
+  - Este proyecto se trabaja con un humano en el ciclo: lo que solo una persona puede juzgar
+    (si reproduce, cómo se ve, si el botón de pantalla completa llena la ventana) lo valida el
+    mantenedor, y el agente no marca esas tareas como hechas por su cuenta.
+
+rules:
+  proposal:
+    - Indicar siempre qué queda fuera del alcance.
+  design:
+    - Registrar las preguntas abiertas que cambien lo que se construye.
+    - Registrar en un apartado aparte lo que validó el humano, con fecha y resultado.
+  tasks:
+    - El primer grupo es la prueba de reproducción, y debe decir cuándo detenerse.
+    - Cada tarea indica cómo se verifica y quién lo verifica; las tareas que solo una persona puede juzgar llevan la marca [HITL] y las que ejecuta el agente, [AUTO].
+
+operations:
+  apply:
+    guidance:
+      - No marcar una tarea [HITL] como hecha sin la confirmación explícita del humano en la conversación; antes, preparar los pasos exactos y el resultado esperado.
+      - No marcar una tarea como hecha si no se pudo ejecutar en este sistema operativo; dejarla pendiente y decir dónde probarla.
+  archive:
+    guidance:
+      - Resumir el resultado antes de archivar y recordar registrar el cambio con /changelogger y /commit.
