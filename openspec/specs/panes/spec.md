@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define el modo de uno o dos paneles de Primer: cómo se crean, se miden, se liberan y cómo se reparten entre ellos el foco y el audio.
+Define el modo de uno a tres paneles de Primer y su disposición horizontal o vertical: cómo se crean, se miden, se liberan y cómo se reparten entre ellos el foco y el audio.
 
 ## Requirements
 
