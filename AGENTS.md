@@ -1,6 +1,6 @@
 # Guía para agentes
 
-*Última modificación: 20 de octubre de 2026, 22:23 (CST)*
+*Última modificación: 20 de octubre de 2026, 22:46 (CST)*
 
 Este archivo es para un agente de IA que trabaja en este repositorio. El autor mantiene un repositorio de reglas personales (`rules`) con las *skills* de trabajo (`/commit`, `/changelogger`, `/git-init`, `/licensing`) y sus procedimientos. Está presente en `~/rules`, así que **si existe, manda sobre el resumen de este archivo**; este archivo recoge lo esencial por si no está.
 
@@ -59,7 +59,7 @@ Reglas para las tareas [HITL]:
 Hechos que vienen del autor:
 
 - NBA League Pass se contrata como canal dentro de Prime Video, y el autor planea contratar también MLB.TV por la misma vía. Por eso Primer se construye sobre Prime Video y no se ata a un solo deporte.
-- Dos paneles alcanzaban: era una decisión del autor, basada en su lectura del calendario de la NBA, que este repositorio no ha verificado. El 2026-10-20 el autor pidió un tercer panel y las disposiciones horizontal y vertical (`add-third-pane-and-layouts`); que la cuenta admita tres reproducciones a la vez no está verificado.
+- Dos paneles alcanzaban: era una decisión del autor, basada en su lectura del calendario de la NBA, que este repositorio no ha verificado. El 2026-10-20 el autor pidió un tercer panel y las disposiciones horizontal y vertical (`add-third-pane-and-layouts`). Medido por el autor el 2026-10-20: la cuenta permitió tres reproducciones a la vez (un partido de OKC, uno de Necaxa y «Rápidos y Furiosos») sin que Prime Video rechazara ninguna; el límite exacto de transmisiones simultáneas, si lo hay, sigue sin medirse.
 - El resultado esperado: aplicación sin bordes con hasta tres paneles (dos en 32:9), el panel sin foco silenciado, y sin sobrescribir la pantalla completa.
 - Al reproducir, el reproductor de Prime Video llena la ventana por sí mismo, y con dos paneles llena cada panel (confirmado por el autor).
 - La pantalla completa del reproductor funciona con dos paneles (confirmado por el autor), así que no se desactiva con `isElementFullscreenEnabled`.

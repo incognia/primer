@@ -6,6 +6,7 @@
 
 ## [2026-10-20] - Arranque del repositorio
 
+- docs: se actualiza en `AGENTS.md` el hecho sobre el cupo de transmisiones simultáneas: el autor midió el 2026-10-20 que la cuenta permitió tres reproducciones a la vez (un partido de OKC, uno de Necaxa y «Rápidos y Furiosos») sin que Prime Video rechazara ninguna, aunque el límite exacto, si lo hay, sigue sin medirse
 - docs: se actualiza el propósito de la especificación `panes` en `openspec/specs/panes/spec.md` para que describa de uno a tres paneles y su disposición horizontal o vertical
 - docs: se archiva el cambio `add-third-pane-and-layouts` en `openspec/changes/archive/2026-10-20-add-third-pane-and-layouts/` (propuesta, diseño, tareas y especificaciones), pues sus especificaciones ya están en `openspec/specs/`
 - docs: se sincronizan con `openspec/specs/` las modificaciones de `add-third-pane-and-layouts` a las especificaciones `panes`, `window-chrome`, `shortcuts` y `selftest` (tercer panel, disposiciones horizontal y vertical, y proporción de la ventana según el número de paneles), que pasan a formar parte del contrato del proyecto
