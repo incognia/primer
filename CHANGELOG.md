@@ -6,6 +6,7 @@
 
 ## [2026-10-20] - Arranque del repositorio
 
+- docs: se sincronizan con `openspec/specs/` las siete especificaciones de `add-macos-viewer` (`diagnostics`, `panes`, `playback`, `selftest`, `session`, `shortcuts` y `window-chrome`), que pasan a ser el contrato del proyecto
 - docs: se registran en `design.md` las validaciones finales de `add-macos-viewer` (el README seguido en un `git clone` real, con 89 de 89 comprobaciones de la autoprueba; la tarea 5.2 sobre sesión persistente, segunda instancia y pegar con ⌘V; y la prueba de cierre 6.3 con una película en cada panel, con audio solo en el panel con foco) y se marca como hecha la tarea 5.2 en `tasks.md`
 - docs: se actualizan `README.md` (se quita el aviso de «en especificación» y se documentan requisitos, compilación, atajos, autoprueba y diagnóstico) y el cambio `add-macos-viewer`: los paneles quedan sin hueco (propuesta, diseño y especificaciones de `panes` y `selftest`), se marcan como hechas las tareas 4.2, 4.4, 5.1, 6.1 y 6.2 y se registran en `design.md` las validaciones del mantenedor, las mediciones de las tareas 5.1 y 6.1, el límite de reproducciones observado y el plan de las pruebas finales
 - test: se agrega la página de prueba `shared/fixtures/form.html`, con campos de correo y contraseña de mentira, para comprobar que el registro de diagnóstico no contiene el contenido de los campos
